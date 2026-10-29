@@ -1,0 +1,31 @@
+{
+  "id": "clear",
+  "title": "CLEAR: an auditable foundation model for radiology grounded in clinical concepts",
+  "authors": [
+    "Tianyu Han",
+    "Riga Wu",
+    "Yu Tian",
+    "Firas Khader",
+    "Lisa C. Adams",
+    "Keno K. Bressem",
+    "Christos A. Davatzikos",
+    "Jakob Nikolas Kather",
+    "Li Shen",
+    "David A. Mankoff",
+    "Eduardo Mortani Barbosa",
+    "Daniel Truhn"
+  ],
+  "venue": "Nature Biomedical Engineering",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41551-026-01741-4",
+  "abstract": "'Black box' deep learning models for medical image interpretation limit clinical trust and analysis of performance degradation. Here we introduce Concept-Level Embeddings for Auditable Radiology (CLEAR), an auditable foundation model based on clinical concepts. Trained on over 0.87 million image-report pairs from 239,391 patients, CLEAR learns a visual representation and projects chest X-rays into a semantically rich space defined by large language model embeddings, making every prediction decomposable into weighted contributions from individual radiological observations. External validation on four large, physician-annotated datasets from the United States, Europe and Asia shows that CLEAR not only achieves state-of-the-art classification performance but also enables applications: auditable zero-shot pathology detection, systematic identification of radiological confounders and the creation of expert-level concept bottleneck models from data-driven concepts. By integrating clinical knowledge directly into its reasoning process, CLEAR offers a framework for robust model auditing, safer deployment and enhanced physician-AI collaboration, advancing towards trustworthy medical AI.",
+  "axes": [
+    "개념 기반 설명가능성",
+    "기관 간 일반화"
+  ],
+  "takeaway": "CLEAR는 임상 개념으로 분해 가능한 흉부 X선 기반 모델로, 미국·유럽·아시아 4개 외부 데이터셋에서 최고 수준의 분류 성능과 교란 요인 식별을 보였다고 보고한다.",
+  "relevance": "우리 데이터는 5개 기관과 AP/PA 촬영이 섞여 있어 촬영 자세나 장비(9종)가 교란 요인으로 작용하는지 감사하려는 논문의 문제의식과 맞닿습니다. 정상 대 비정상이 약 53:47이고 다중 라벨 사례가 있어 개념별 기여도 분해를 볼 만한 구성입니다.",
+  "caveat": "외부 검증은 대규모 의사 주석 데이터에서 이루어졌으며, 272건 합성 코호트로는 성능 재현이나 실제 교란 요인 확인이 불가능합니다.",
+  "check": "AP와 PA 간 성능 차이가 개념 기여도 수준에서 어떤 개념(예: 심장 크기, 흉수)으로 설명되는가?"
+}
