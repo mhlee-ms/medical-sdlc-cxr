@@ -9,6 +9,8 @@ network:
     - api.openalex.org
     - export.arxiv.org
     - doi.org
+    # DOI 는 출판사 페이지로 넘어간다. 검증이 원문을 확인할 수 있게 연다.
+    - www.nature.com
 tools:
   cli-proxy: true
 services:

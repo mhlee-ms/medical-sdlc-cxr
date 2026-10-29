@@ -130,6 +130,10 @@ An approved probing plan landed on `main`. Run the deep dive it describes.
   body instead of doing them. When the plan calls for running an image model
   (inference, Grad-CAM, AP/PA performance), do the cohort-level part with
   `query-medical-db` now and express the model part as `cxr` runs rather than
-  reporting it as a deviation.
+  reporting it as a deviation. In `README.md`, add a `## Delegated to CXR Lens`
+  section that maps every plan item you handed off to the `cxr` run that covers it
+  (per-label sensitivity, AUROC and their bootstrap 95% CIs by view come out of a
+  view run's metrics). Do not skip any plan item `query-medical-db` can answer,
+  such as cross-tabulations of view, institution and device.
 - Every claim about the paper needs its source link.
 - Do not overstate: a finding on this cohort is hypothesis-generating.

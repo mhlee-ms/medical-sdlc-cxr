@@ -75,8 +75,20 @@ is to catch errors before a physician relies on them.
    CXR Lens workflow after merge, not a scope change: check that its runs serve the
    plan's question, use only the allowed values (`view` AP/PA/"", one NIH `label` or
    "", `weights` all/pc, at most 3 runs), and that no result of those runs is claimed.
+   A plan item the README lists under `## Delegated to CXR Lens` with the run that
+   covers it is handed off, not dropped; anything the plan asked for that
+   `query-medical-db` could answer must still be done in this pull request.
 6. Record your verdict in the `checks` array of `analysis/<n>/analysis.json`, one
-   entry per gate, and push it to the pull request branch:
+   entry per gate, and push it to the pull request branch. The push only works
+   from the pull request's own head branch, so do exactly this:
+   - Read the pull request's head branch name (`head.ref`) with the GitHub tools.
+   - The checkout already fetched every branch. Run
+     `git checkout -B <head.ref> origin/<head.ref>` — use that exact name; do not
+     invent a branch name, and do not `git fetch` (there are no credentials for it).
+   - Edit only the `checks` array, then `git add analysis/<n>/analysis.json` and
+     `git commit -m "Record verification checks"`.
+   - Call `push_to_pull_request_branch` with that pull request's number. You do
+     not pass a branch name; the tool pushes the branch you have checked out.
 
    ```json
    { "ok": true, "name": "출처 실재", "by": "모델", "detail": "" }
