@@ -1,0 +1,31 @@
+{
+  "id": "cf2seg",
+  "title": "Grounding Radiology Report Findings into Medical Image Segmentation",
+  "authors": [
+    "Suyang Xi",
+    "Songtao Hu",
+    "Shansong Wang",
+    "Hong Ding",
+    "Yuheng Li",
+    "Wenfeng He",
+    "Kuo Zhang",
+    "Luke del Balzo",
+    "Chong Zhong",
+    "Mingzhe Hu",
+    "Catherine C. Liu",
+    "Yunhao Liu"
+  ],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03051-0",
+  "abstract": "Routine radiology practice documents abnormalities primarily in narrative reports rather than pixel-level annotations. However, many clinically important analyses require spatially localized evidence. This mismatch limits the reuse of large-scale image-report archives for spatially resolved quantitative analysis, as heterogeneous clinical findings cannot be directly translated into consistent spatial representations. We therefore present Clinical-Findings-Guided Segmentation (CF2Seg), a chest X-ray segmentation framework that learns spatial representations directly from full radiology findings. We further curate a multi-source benchmark comprising 53,386 examinations, each paired with expert spatial annotations and corresponding reports across diverse thoracic pathologies and institutions. CF2Seg uses a dual-stage text–image fusion strategy in which report findings guide feature formation and are revisited during decoding to improve boundary delineation across scales. On a unified multi-source benchmark, CF2Seg achieves strong overall performance and remains stable under clinically realistic variation, including distribution shift, annotation scarcity, and clinically realistic image and report perturbations. Beyond segmentation accuracy, CF2Seg-derived masks preserve proportional lesion-burden trends with strong agreement to expert annotations, supporting retrospective spatial annotation and quantitative reuse of large-scale clinical image–report archives.",
+  "axes": [
+    "병변 위치 표시",
+    "기관 간 일반화"
+  ],
+  "takeaway": "CF2Seg는 영상의학 판독문의 소견을 이용해 흉부 X선 병변을 분할하며, 분포 변화와 주석 부족 상황에서도 안정적이고 병변 부담 추세가 전문가 주석과 잘 일치한다고 보고한다.",
+  "relevance": "우리 시스템은 Grad-CAM으로 소견 위치를 표시하며, 데이터에는 판독문과 임상 정보가 함께 있어 판독문 기반 위치 표시의 아이디어를 적용해 볼 수 있습니다. 결절(7건)·종괴 등 소수 병변은 히트맵 위치 검증이 특히 중요합니다.",
+  "caveat": "우리 데이터에는 픽셀 단위 전문가 주석이 없어 분할 정확도나 병변 부담 일치도를 검증할 수 없습니다.",
+  "check": "판독문 문장을 입력으로 쓰면 Grad-CAM 대비 결절 위치 표시가 얼마나 개선되는가?"
+}

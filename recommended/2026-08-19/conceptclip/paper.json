@@ -1,0 +1,31 @@
+{
+  "id": "conceptclip",
+  "title": "An explainable biomedical foundation model via large-scale concept-enhanced vision–language pretraining",
+  "authors": [
+    "Yuxiang Nie",
+    "Sunan He",
+    "Yequan Bie",
+    "Yihui Wang",
+    "Zhixuan Chen",
+    "Shu Yang",
+    "Zhiyuan Cai",
+    "Linshan Wu",
+    "Hongmei Wang",
+    "Xi Wang",
+    "Ngai Shing Cheng",
+    "Luyang Luo"
+  ],
+  "venue": "Nature Biomedical Engineering",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41551-026-01764-x",
+  "abstract": "Artificial intelligence for medical imaging is required to be accurate and interpretable to clinicians. However, current multimodal biomedical foundation models often prioritize performance over explainability. Here we present ConceptCLIP, an explainable biomedical foundation model that achieves state-of-the-art diagnostic accuracy while delivering human-interpretable explanations across diverse imaging modalities. We curate MedConcept-23M, a large-scale dataset comprising 23 million biomedical image-text-concept triplets. Leveraging this dataset, we pretrain ConceptCLIP via joint image-text and region-concept alignment for precise and interpretable medical image analysis. Across a large-scale benchmark covering 78 datasets in 10 imaging modalities, ConceptCLIP demonstrates superior diagnostic performance while providing human-understandable explanations. In a clinician user study spanning three modalities, the concept-based explanations provided by ConceptCLIP help clinicians verify model predictions and identify potential errors. As an explainable biomedical foundation model, ConceptCLIP represents a critical milestone towards the widespread clinical adoption of AI, thereby advancing trustworthy AI in medicine.",
+  "axes": [
+    "개념 기반 설명가능성",
+    "기관 간 일반화"
+  ],
+  "takeaway": "개념 단위 설명을 붙인 ConceptCLIP이 78개 데이터셋에서 높은 진단 성능을 보였고, 임상의 사용자 연구에서 설명이 모델 예측의 검증과 오류 발견에 도움이 되었다고 보고한다.",
+  "relevance": "우리 코호트는 272건으로, 정상 소견 145건(약 53%)을 제외하면 침윤 21건, 무기폐 16건, 결절 7건 등 소수 라벨이 많고 다중 라벨 사례도 있습니다. 5개 기관(INST01–05)·AP 88건/PA 184건이라 기관·촬영 자세별 설명의 일관성을 점검하기에 적합합니다. 현재 사용 중인 Grad-CAM 히트맵과 개념 기반 설명을 비교해 볼 수 있습니다.",
+  "caveat": "CXR 전용 평가가 아니라 10개 모달리티 전반의 결과이며, 272건의 합성(is_synthetic) 데이터로는 임상 성능이나 사용자 연구 결과를 재현·검증할 수 없습니다.",
+  "check": "소수 라벨(결절, 기흉 등)에서 개념 기반 설명이 Grad-CAM보다 오류 발견에 더 도움이 되는가?"
+}
