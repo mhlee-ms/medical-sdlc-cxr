@@ -18,10 +18,12 @@ header{display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:
 .brand .logo{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 210deg,var(--teal),var(--blue),var(--violet),var(--teal));display:grid;place-items:center;color:#05121a;font-size:13px;font-weight:800}
 .brand small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
 nav{display:flex;gap:4px;background:var(--panel);padding:4px;border-radius:10px;border:1px solid var(--line)}
-nav button{border:0;background:transparent;padding:6px 14px;border-radius:7px;color:var(--muted);cursor:pointer}
+nav button{border:0;background:transparent;padding:6px 14px;border-radius:7px;color:var(--muted);cursor:pointer;white-space:nowrap}
 nav button.on{background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
 .spacer{flex:1}
 .pill{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+#runinfo{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.brand{white-space:nowrap}
 .pill.warn{border-color:#5a4316;color:var(--amber);background:#1d170b}
 select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 main{height:calc(100% - 57px)}
@@ -282,6 +284,29 @@ async function api(path, opt) {
   return r.json();
 }
 
+/* ------------------------------------------------------------ data source
+   Live mode talks to cxr_web.py. Static mode (window.CXR_STATIC, written by cxr_site.py for GitHub Pages)
+   reads pre-built files with relative paths, so the site works under any Pages sub-path. */
+const STATIC = !!window.CXR_STATIC;
+const enc = encodeURIComponent;
+const src = {
+  meta: () => api(STATIC ? "data/meta.json" : "/api/meta"),
+  runs: () => api(STATIC ? "data/runs.json" : "/api/runs"),
+  run: n => api(STATIC ? `data/runs/${enc(n)}.json` : `/api/runs/${enc(n)}`),
+  image: (id, thumb) => STATIC ? `img/${thumb ? "thumb/" : ""}${enc(id)}.jpg` : `/api/image/${enc(id)}.jpg${thumb ? "?size=96" : ""}`,
+  _anatomy: null,
+  async anatomy(id) {
+    if (!STATIC) return api(`/api/anatomy/${enc(id)}`);
+    this._anatomy ||= api("data/anatomy.json").catch(() => ({}));
+    return (await this._anatomy)[id] || null;
+  },
+  async cam(r, c) {
+    if (!STATIC) return api(`/api/cam/${enc(r.id)}/${enc(c)}?weights=${enc(S.data.run.weights)}`);
+    if (!r.top.includes(c)) throw new Error(`웹 버전은 영상마다 상위 ${S.data.run.top_k}개 소견의 히트맵만 담고 있습니다`);
+    return {finding: c, score: r.scores[c], region: (r.regions || {})[c] || {}, cam: `cams/${enc(S.data.run.run_id)}/${enc(r.id)}__${enc(c)}.png`};
+  },
+};
+
 /* ------------------------------------------------------------ core helpers */
 const classes = () => S.data.run.classes;
 const ko = c => S.ko[c] || c;
@@ -301,7 +326,7 @@ function classStatus(r, c) {
 
 /* ------------------------------------------------------------ boot */
 async function refreshRuns() {
-  const runs = await api("/api/runs").catch(() => null);
+  const runs = await src.runs().catch(() => null);
   if (!runs || runs.map(r => r.run_id).join() === S.runs.map(r => r.run_id).join()) return;
   S.runs = runs;
   const opts = runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
@@ -309,8 +334,12 @@ async function refreshRuns() {
 }
 
 async function boot() {
-  S.ko = (await api("/api/meta")).ko;
-  S.runs = await api("/api/runs");
+  if (STATIC) {
+    $("#uploadBtn").parentElement.style.display = "none";
+    document.querySelector(".pill.warn").textContent = "공개 NIH 영상 + 합성 병원 데이터 · 연구·교육용";
+  }
+  S.ko = (await src.meta()).ko;
+  S.runs = await src.runs();
   const opts = S.runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
   const pref = S.runs.find(r => r.run_id === "baseline") || S.runs[0];
   const other = S.runs.find(r => r.run_id !== pref.run_id) || pref;
@@ -321,15 +350,15 @@ async function boot() {
   $("#runA").onchange = $("#runB").onchange = renderCompare;
   // New runs started from Copilot chat should appear without reloading the page.
   ["#run", "#runA", "#runB"].forEach(id => $(id).addEventListener("pointerdown", refreshRuns));
-  setInterval(refreshRuns, 10000);
+  if (!STATIC) setInterval(refreshRuns, 10000);
   await loadRun(pref.run_id);
 }
 
 async function loadRun(name) {
-  S.data = await api(`/api/runs/${encodeURIComponent(name)}`);
+  S.data = await src.run(name);
   S.cam = null; S.study = null;
   const r = S.data.run;
-  $("#runinfo").textContent = `${r.n_studies}건 · ${r.weights}`;
+  $("#runinfo").textContent = `${r.n_studies}건 · ${r.weights}` + (STATIC && r.created_at ? ` · ${r.created_at.slice(0, 16).replace("T", " ")} Actions 빌드` : "");
   const opts = `<option value="any">이상 소견 유무</option>` + classes().map(c => `<option value="${c}">${c} (${ko(c)})</option>`).join("");
   $("#basis").innerHTML = $("#thClass").innerHTML = opts;
   if (!classes().includes(S.basis)) S.basis = "any";
@@ -365,7 +394,7 @@ function renderList() {
     const st = status(r);
     const lab = r.uploaded ? "업로드 영상 · 정답 없음" : (r.labels.join(", ") || "No Finding");
     return `<div class="item ${S.study && S.study.id === r.id ? "on" : ""}" data-i="${i}">
-      <img loading="lazy" src="/api/image/${encodeURIComponent(r.id)}.jpg?size=96" alt="">
+      <img loading="lazy" src="${src.image(r.id, true)}" alt="">
       <div><div class="id">…${esc(r.id.slice(-8))} <span class="note">${esc(r.view)}</span></div><div class="lb">${esc(lab)}</div></div>
       <div style="text-align:right"><span class="st ${st}">${STATUS_KO[st]}</span><div class="note" style="font-variant-numeric:tabular-nums">${fmt(basisScore(r))}</div></div></div>`;
   }).join("") || `<div class="empty">조건에 맞는 증례가 없습니다</div>`;
@@ -383,8 +412,8 @@ async function openStudy(r, finding) {
   $("#gt").innerHTML = r.uploaded ? `<span class="tag none">정답 없음 (업로드)</span>` :
     (r.labels.length ? r.labels.map(l => `<span class="tag">${esc(l)} · ${esc(ko(l))}</span>`).join("") : `<span class="tag none">No Finding</span>`);
   $("#meta").innerHTML = `<span>ID …${esc(r.id.slice(-8))}</span><span>${esc(r.view)}</span><span>${esc(r.sex)}</span><span>${esc(r.age_bin)}${r.uploaded ? "" : "세"}</span>`;
-  const [img, an] = await Promise.all([loadImg(`/api/image/${encodeURIComponent(r.id)}.jpg`), api(`/api/anatomy/${encodeURIComponent(r.id)}`).catch(() => null)])
-    .catch(() => { $("#loc").innerHTML = `<span style="color:var(--red)">영상을 불러오지 못했습니다 — 서버(cxr_web.py)가 실행 중인지 확인하세요</span>`; return [null, null]; });
+  const [img, an] = await Promise.all([loadImg(src.image(r.id)), src.anatomy(r.id).catch(() => null)])
+    .catch(() => { $("#loc").innerHTML = `<span style="color:var(--red)">영상을 불러오지 못했습니다${STATIC ? "" : " — 서버(cxr_web.py)가 실행 중인지 확인하세요"}</span>`; return [null, null]; });
   if (S.study !== r || !img) return;
   if (!r.uploaded) history.replaceState(null, "", `#run=${encodeURIComponent(S.data.run.run_id)}&case=${r.id.slice(-8)}`);
   S.base = img; S.an = an;
@@ -423,7 +452,7 @@ async function selectFinding(c) {
   const r = S.study, req = ++S.req;
   $("#loc").innerHTML = `<span class="spin"></span> <span class="note">Grad-CAM 계산 중…</span>`;
   try {
-    const res = await api(`/api/cam/${encodeURIComponent(r.id)}/${encodeURIComponent(c)}?weights=${encodeURIComponent(S.data.run.weights)}`);
+    const res = await src.cam(r, c);
     if (req !== S.req) return;
     const g = await loadImg(res.cam), off = document.createElement("canvas");
     off.width = off.height = 512;
@@ -574,7 +603,7 @@ async function renderSummary() {
     d: `${{view: "촬영", sex: "성별", age_bin: "연령"}[worst.g]} ${worst.va} ${fmt(worst.ma.auroc, 2)} vs ${worst.vb} ${fmt(worst.mb.auroc, 2)} · CI ${worst.overlap ? "겹침 → 차이를 말할 근거 부족" : "안 겹침 → 차이 있음"}`, go: "cohort"});
   const other = S.runs.find(x => x.run_id !== run.run_id && x.weights !== run.weights && x.n_studies === run.n_studies);
   if (other) {
-    const O = await api(`/api/runs/${encodeURIComponent(other.run_id)}`), d = O.metrics.any_finding.auroc - a.auroc;
+    const O = await src.run(other.run_id), d = O.metrics.any_finding.auroc - a.auroc;
     checks.push({t: "데이터 누출 점검", s: d > -0.02 ? "green" : d > -0.05 ? "amber" : "red", v: `${d > 0 ? "+" : ""}${d.toFixed(3)}`,
       d: `NIH를 학습하지 않은 가중치(${other.weights.replace("densenet121-res224-", "")})로 바꾸면 ${fmt(a.auroc)} → ${fmt(O.metrics.any_finding.auroc)}`, go: "compare"});
   } else checks.push({t: "데이터 누출 점검", s: "gray", v: "미실시", d: "다른 가중치로 한 번 더 실행하면 비교됩니다"});
@@ -686,7 +715,7 @@ async function renderCompare() {
   const a = $("#runA").value, b = $("#runB").value;
   if (!a || a === b) { $("#cmp").innerHTML = `<div class="empty">비교하려면 서로 다른 런 두 개가 필요합니다.<br><br><code>cxr_harness.py run --name padchest --weights densenet121-res224-pc</code></div>`; return; }
   $("#cmp").innerHTML = `<div class="empty"><span class="spin"></span></div>`;
-  const [A, B] = await Promise.all([a, b].map(n => api(`/api/runs/${encodeURIComponent(n)}`)));
+  const [A, B] = await Promise.all([a, b].map(n => src.run(n)));
   const common = A.run.classes.filter(c => B.run.classes.includes(c));
   const rows = [["이상 소견 유무", A.metrics.any_finding, B.metrics.any_finding],
     ...common.sort((x, y) => A.metrics.per_class[y].positives - A.metrics.per_class[x].positives).map(c => [`${c} · ${ko(c)}`, A.metrics.per_class[c], B.metrics.per_class[c]])];
@@ -775,9 +804,11 @@ $("#resetBtn").onclick = () => { S.opacity = .65; S.bright = 1; S.contrast = 1; 
 $("#uploadBtn").onclick = () => $("#file").click();
 $("#file").onchange = e => { upload(e.target.files[0]); e.target.value = ""; };
 const wrap = $("#wrap");
-wrap.ondragover = e => { e.preventDefault(); $("#drop").classList.add("on"); };
-wrap.ondragleave = () => $("#drop").classList.remove("on");
-wrap.ondrop = e => { e.preventDefault(); $("#drop").classList.remove("on"); upload(e.dataTransfer.files[0]); };
+if (!STATIC) {
+  wrap.ondragover = e => { e.preventDefault(); $("#drop").classList.add("on"); };
+  wrap.ondragleave = () => $("#drop").classList.remove("on");
+  wrap.ondrop = e => { e.preventDefault(); $("#drop").classList.remove("on"); upload(e.dataTransfer.files[0]); };
+}
 document.addEventListener("keydown", e => {
   if (!$("#t-viewer").classList.contains("on") || ["SELECT", "INPUT"].includes(e.target.tagName)) return;
   const i = S.list.indexOf(S.study);

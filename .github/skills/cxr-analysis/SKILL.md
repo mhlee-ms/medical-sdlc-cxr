@@ -57,6 +57,7 @@ PY .github/skills/cxr-analysis/scripts/cxr_harness.py check
    | `predictions.csv` | 영상별 14개 소견 점수, 1순위 근거 위치, CTR (ID는 마스킹 해시) |
    | `findings.json` | 영상별 상위 소견과 Grad-CAM 영역(bbox, 해부학적 위치, 흉강 안 비율, 지름길 의심 여부), CTR |
    | `overlays/<id>.jpg` | 원본(폐·심장 윤곽) + 상위 소견별 히트맵·박스 패널 (흉강 밖 근거는 빨간 박스) |
+   | `cams/<id>__<소견>.png` | 상위 소견 히트맵(128px 흑백) — 정적 웹 뷰어용 |
    | `run.json` | 가중치, 필터, 소요 시간 — 재현용 |
 
 4. **검증한다.** 보고할 핵심 수치 하나 이상을 `predictions.csv`에서 **직접 다시 계산**해
@@ -68,7 +69,19 @@ PY .github/skills/cxr-analysis/scripts/cxr_harness.py check
 
 ## 웹 뷰어 (CXR Lens)
 
-런 결과를 브라우저에서 넘겨 보며 아무 소견이나 클릭하면 그 자리에서 Grad-CAM을 계산합니다.
+두 가지 형태가 있습니다. 화면은 같습니다.
+
+| 형태 | 만드는 법 | 차이 |
+|---|---|---|
+| **GitHub Pages (정적)** | Actions → **CXR Lens** → Run workflow ([cxr-lens.yml](../../workflows/cxr-lens.yml)). 로컬에서는 `PY scripts/cxr_site.py` → `site/cxr/` | 서버 없음. 영상마다 상위 `--top-k` 소견의 히트맵만, 업로드 없음. 주소 `https://<owner>.github.io/<repo>/cxr/` |
+| **실시간 서버** | `PY scripts/cxr_web.py` | 모든 소견의 히트맵을 그 자리에서 계산, 영상 업로드, 새 런 자동 표시 |
+
+정적 사이트는 `fetch` 로 상대 경로의 JSON·이미지를 읽으므로 파일을 더블클릭하지 말고 HTTP 로 엽니다
+(로컬 확인: `python -m http.server -d site 8780` → `http://127.0.0.1:8780/cxr/`).
+Actions 는 매 실행마다 DB 서비스 컨테이너를 새로 띄워 마스킹 ID가 바뀌므로 **분석과 사이트 빌드를 같은 job에서** 합니다.
+폐·심장 분할 캐시는 영상 내용 해시로 저장되어 실행 간 재사용됩니다.
+
+실시간 서버:
 
 ```bash
 PY .github/skills/cxr-analysis/scripts/cxr_web.py   # → http://127.0.0.1:8765 (Codespaces는 포트 탭에서 자동으로 열림)

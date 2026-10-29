@@ -124,23 +124,24 @@ open site/index.html                       # 서버 없이 그대로 열립니�
 대시보드는 데이터를 파일 안에 담은 단일 HTML입니다. fetch도 모듈도 외부 요청도 없어서
 병원 노트북에서 더블클릭 한 번으로 열립니다.
 
-### 영상 분석 하네스 (선택 실습)
+### 흉부 X선 AI 분석 → 웹페이지 (CXR Lens, 선택 실습)
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mhlee-ms/medical-sdlc-cxr?quickstart=1)
+**Actions → CXR Lens → Run workflow** 를 누르면 GitHub Actions 가 DB 의 흉부 X선 272장에 공개 AI 모델
+(torchxrayvision)을 돌려 소견 분류, 판단 근거(Grad-CAM), 폐·심장 분할, 심흉비, 코호트 성능을 계산하고,
+결과를 서버 없는 웹앱으로 만들어 **Pages 의 `/cxr/`** 에 배포합니다. 논문 대시보드(`/`)와 함께 올라갑니다.
+참가자용 안내는 [cxr-handson.md](cxr-handson.md), 분석 절차·해석·의사 대상 데모 대본은
+[.github/skills/cxr-analysis/SKILL.md](.github/skills/cxr-analysis/SKILL.md)에 있습니다.
 
-설치 없이 브라우저에서 하려면 위 버튼을 누르고 [cxr-handson.md](cxr-handson.md)를 따라가세요.
-Codespace가 Python 환경, 모델 가중치, DB를 자동으로 준비합니다(`.devcontainer/`).
+Pages 는 공개 웹입니다. 올라가는 영상은 NIH 공개 영상이고 병원 정보는 합성이며, 식별자는 마스킹 해시입니다.
 
-DB에 담긴 흉부 X선 272장에 사전학습 모델(torchxrayvision)을 그대로 돌려 소견을 분류하고,
-Grad-CAM으로 근거 부위를 표시하고, 코호트 성능을 리포트와 로컬 웹 뷰어(CXR Lens)로 보여 줍니다.
-Copilot 채팅에서 `/cxr-analysis` 로 부르거나 아래처럼 직접 실행합니다. 자세한 절차와 분석 과제,
-의사 대상 데모 대본은 [.github/skills/cxr-analysis/SKILL.md](.github/skills/cxr-analysis/SKILL.md)에 있습니다.
+같은 웹앱을 실시간 서버로 띄우면(로컬 또는 [Codespaces](https://codespaces.new/mhlee-ms/medical-sdlc-cxr?quickstart=1))
+모든 소견의 히트맵, 영상 업로드, Copilot 채팅의 `/cxr-analysis` 스킬까지 쓸 수 있습니다.
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r .github/skills/cxr-analysis/requirements.txt
-.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_harness.py check
 .venv/bin/python .github/skills/cxr-analysis/scripts/cxr_harness.py run --name baseline   # runs/cxr/baseline/report.md
-.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_web.py                           # http://127.0.0.1:8765
+.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_web.py                           # 실시간: http://127.0.0.1:8765
+.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_site.py                          # 정적: site/cxr/ (Pages 와 동일)
 ```
 
 ## 구성
@@ -150,7 +151,7 @@ python -m venv .venv && .venv/bin/pip install -r .github/skills/cxr-analysis/req
 ├── .devcontainer/                        # Codespaces: Python · 가중치 · DB 자동 준비
 ├── .github/
 │   ├── ISSUE_TEMPLATE/paper-analysis.yml
-│   ├── skills/cxr-analysis/              # 흉부 X선 분류 · Grad-CAM · 코호트 성능 하네스 + 웹 뷰어 · 데모 대본
+│   ├── skills/cxr-analysis/              # 흉부 X선 분석 하네스 · 웹 뷰어(실시간/정적) · 데모 대본
 │   └── workflows/
 │       ├── shared/medical-db.md          # DB 서비스 · 마스킹 뷰 조회 도구 (공용)
 │       ├── daily-paper-recommendations.md
@@ -158,7 +159,8 @@ python -m venv .venv && .venv/bin/pip install -r .github/skills/cxr-analysis/req
 │       ├── paper-deep-dive.md
 │       ├── merge-collection.yml           # 수집 PR 자동 병합
 │       ├── analysis-verification.md
-│       └── build-dashboard.yml          # 대시보드 빌드 후 Pages 배포
+│       ├── build-dashboard.yml          # 대시보드 빌드 후 Pages 배포 (/cxr/ 유지)
+│       └── cxr-lens.yml                 # 흉부 X선 AI 분석 → 정적 웹앱 → Pages /cxr/
 ├── db/                                   # PostgreSQL 이미지, 마스킹 뷰, 합성 데이터
 ├── tools/build_dashboard.py              # 저장소 → site/index.html
 ├── recommended/{date}/                   # 1단계: {slug}/paper.json · README.md

@@ -1,0 +1,154 @@
+name: CXR Lens
+
+# 흉부 X선 272장에 공개 AI 모델을 돌려 소견 분류 · 판단 근거(히트맵) · 폐·심장 분할 · 심흉비를 계산하고,
+# 결과를 서버 없는 웹앱으로 만들어 GitHub Pages 의 /cxr/ 에 배포한다.
+# 영상은 NIH ChestX-ray14 공개 영상, 병원 정보는 합성이다. DB 는 llm_reader 로 마스킹 뷰만 읽는다.
+# Pages 는 Settings → Pages → Source 가 GitHub Actions 여야 한다.
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: 이 소견이 있는 영상만 분석 (전체 = 272장)
+        type: choice
+        default: 전체
+        options: [전체, Atelectasis, Cardiomegaly, Consolidation, Edema, Effusion, Emphysema, Fibrosis, Hernia,
+                  Infiltration, Mass, Nodule, Pleural_Thickening, Pneumonia, Pneumothorax]
+      view:
+        description: 촬영 자세
+        type: choice
+        default: 전체
+        options: [전체, PA, AP]
+      compare:
+        description: NIH 영상을 학습하지 않은 모델(PadChest)로도 돌려 '모델 비교' 탭을 채운다
+        type: boolean
+        default: true
+      top_k:
+        description: 영상마다 히트맵을 남길 상위 소견 수
+        type: choice
+        default: "3"
+        options: ["3", "5"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: cxr-lens
+      cancel-in-progress: true
+    services:
+      postgres:
+        # 공개 이미지라 익명으로 받는다. 마스킹 키는 컨테이너가 뜰 때마다 새로 생기므로
+        # 분석과 사이트 빌드는 반드시 같은 job 안에서 한다.
+        image: ghcr.io/hy2219/medical-sdlc-db:latest
+        env:
+          POSTGRES_DB: medical
+          POSTGRES_USER: medical
+          POSTGRES_PASSWORD: medical
+          LLM_DB_PASSWORD: ${{ secrets.LLM_DB_PASSWORD || 'llm-readonly-local' }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U medical -d medical"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      LLM_DB_PASSWORD: ${{ secrets.LLM_DB_PASSWORD || 'llm-readonly-local' }}
+      PYTHONIOENCODING: utf-8
+      SKILL: .github/skills/cxr-analysis/scripts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/skills/cxr-analysis/requirements.txt
+
+      - name: Install packages (CPU PyTorch)
+        run: |
+          pip install -q --no-deps torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -q -r .github/skills/cxr-analysis/requirements.txt
+          pip check
+
+      - name: Restore model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.torchxrayvision
+          key: torchxrayvision-weights-v1
+
+      - name: Restore lung/heart segmentation cache
+        uses: actions/cache@v4
+        with:
+          # 영상 내용 해시로 저장되어 실행마다 바뀌는 마스킹 ID와 무관하게 재사용된다.
+          path: runs/cxr/_anatomy
+          key: cxr-anatomy-v1-${{ github.run_id }}
+          restore-keys: cxr-anatomy-v1-
+
+      - name: Check DB access and models
+        run: python "$SKILL/cxr_harness.py" check
+
+      - name: Analyze
+        env:
+          LABEL: ${{ inputs.label }}
+          VIEW: ${{ inputs.view }}
+          TOP_K: ${{ inputs.top_k }}
+          COMPARE: ${{ inputs.compare }}
+        run: |
+          args=(--top-k "$TOP_K")
+          [ "$LABEL" != "전체" ] && args+=(--label "$LABEL")
+          [ "$VIEW" != "전체" ] && args+=(--view "$VIEW")
+          python "$SKILL/cxr_harness.py" run --name baseline "${args[@]}"
+          if [ "$COMPARE" = "true" ]; then
+            python "$SKILL/cxr_harness.py" run --name padchest --weights densenet121-res224-pc "${args[@]}"
+          fi
+
+      - name: Job summary
+        run: |
+          # 패널 링크는 Pages 에 올리지 않는 파일이라 요약에서는 뺀다.
+          sed -E 's/ \[보기\]\([^)]*\) \|/ – |/' runs/cxr/baseline/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build site (dashboard + CXR Lens)
+        run: |
+          python3 tools/build_dashboard.py
+          python "$SKILL/cxr_site.py" --out site/cxr
+
+      - name: Keep CXR Lens for dashboard rebuilds
+        uses: actions/cache/save@v4
+        with:
+          path: site/cxr
+          key: cxr-site-${{ github.run_id }}
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: cxr-reports
+          path: |
+            runs/cxr/*/report.md
+            runs/cxr/*/metrics.json
+            runs/cxr/*/run.json
+          retention-days: 14
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: analyze
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}cxr/
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import io
 import json
 import os
@@ -43,6 +44,7 @@ KO = {
 }
 MIN_POSITIVES = 5
 DISPLAY = 512
+CAM_EXPORT = 128
 DIFFUSE_AREA_PCT = 35
 SHORTCUT_PCT = 50
 THORAX_MARGIN_PX = 32
@@ -205,7 +207,10 @@ class Anatomy:
         return bits
 
     def masks(self, study_id: str, display: np.ndarray, persist: bool = True) -> dict[str, np.ndarray]:
-        path = self.cache_dir / f"{study_id}.png" if self.cache_dir and persist else None
+        # Keyed by image content, not by masked ID: the masking secret is regenerated whenever the DB container is
+        # initialised (every Actions run, every new codespace), so masked IDs are not stable cache keys.
+        key = hashlib.sha1(display.tobytes()).hexdigest()[:24]
+        path = self.cache_dir / f"{key}.png" if self.cache_dir and persist else None
         if path and path.exists():
             bits = np.asarray(Image.open(path)).astype(np.uint16)
         else:
@@ -279,6 +284,14 @@ def contours(m: dict[str, np.ndarray], names=("Right Lung", "Left Lung", "Heart"
         polys = [approximate_polygon(c, 1.5) for c in find_contours(m[name].astype(float), 0.5) if len(c) > 30]
         out[name] = [[[round(float(x), 1), round(float(y), 1)] for y, x in p] for p in polys]
     return out
+
+
+def anatomy_view(m: dict[str, np.ndarray]) -> dict:
+    """What the viewer draws: lung/heart/thoracic-cavity outlines and the cardiothoracic ratio."""
+    cs = contours(m)
+    cs.update(contours({"Thorax": thorax_roi(m)}, names=("Thorax",)))
+    return {"contours": cs, "ctr": ctr_measure(m),
+            "names": {**{k: ANATOMY_KO[k] for k in ("Right Lung", "Left Lung", "Heart")}, "Thorax": "흉강 기준 영역"}}
 
 
 # ---------------------------------------------------------------- localization
@@ -608,6 +621,7 @@ def cmd_run(args) -> int:
     run_id = args.name or datetime.now().strftime("%Y%m%d-%H%M%S")
     out = Path(args.out) / run_id
     (out / "overlays").mkdir(parents=True, exist_ok=True)
+    (out / "cams").mkdir(exist_ok=True)
 
     studies = fetch_studies(args.limit, args.view, args.label)
     if not studies:
@@ -630,6 +644,10 @@ def cmd_run(args) -> int:
             for c, cam in cams.items():
                 regions[c].update(anatomy_attribution(cam, masks, roi))
         render_panel(display, st, scores, cams, regions, masks).save(out / "overlays" / f"{st.id}.jpg", quality=85)
+        for c, cam in cams.items():
+            # Small grayscale CAMs for the static (GitHub Pages) viewer; it upsamples and colours them in the browser.
+            Image.fromarray((np.clip(cam, 0, 1) * 255).astype(np.uint8)).resize((CAM_EXPORT, CAM_EXPORT), Image.BILINEAR) \
+                .save(out / "cams" / f"{st.id}__{c}.png", optimize=True)
         records.append({"id": st.id, "labels": st.labels, "view": st.view, "sex": st.sex,
                         "age_bin": st.age_bin, "scores": scores, "top": list(cams), "regions": regions, "ctr": ctr})
         if i % 20 == 0 or i == len(studies):

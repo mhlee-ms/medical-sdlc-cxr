@@ -25,8 +25,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cxr_harness import (  # noqa: E402
-    ANATOMY_KO, DISPLAY, KO, REPO_ROOT, Analyzer, Anatomy, age_bin, anatomy_attribution, cam_region, contours,
-    ctr_measure, dsn, thorax_roi,
+    DISPLAY, KO, REPO_ROOT, Analyzer, Anatomy, age_bin, anatomy_attribution, anatomy_view, cam_region, dsn,
 )
 
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
@@ -87,10 +86,7 @@ class Engine:
         m = self.masks(study_id)
         if m is None:
             return {"contours": {}, "ctr": None}
-        cs = contours(m)
-        cs.update(contours({"Thorax": thorax_roi(m)}, names=("Thorax",)))
-        return {"contours": cs, "ctr": ctr_measure(m),
-                "names": {**{k: ANATOMY_KO[k] for k in ("Right Lung", "Left Lung", "Heart")}, "Thorax": "흉강 기준 영역"}}
+        return anatomy_view(m)
 
     def runs(self) -> list[dict]:
         out = []

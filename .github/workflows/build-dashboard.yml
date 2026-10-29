@@ -32,6 +32,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 tools/build_dashboard.py --check && python3 tools/build_dashboard.py
+      # CXR Lens(/cxr/)는 별도 워크플로가 만든다. 대시보드만 다시 배포하면 사라지므로
+      # 마지막으로 만든 사이트를 캐시에서 되살려 함께 올린다. 아직 없으면 그냥 건너뛴다.
+      - uses: actions/cache/restore@v4
+        with:
+          path: site/cxr
+          key: cxr-site-latest
+          restore-keys: cxr-site-
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
