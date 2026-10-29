@@ -1,0 +1,35 @@
+{
+  "paper": "clear",
+  "verdict": "불충분",
+  "summary": "CLEAR는 87만 건의 영상-보고서 쌍으로 흉부 X선을 LLM 임베딩 기반 임상 개념 공간에 투영해 예측을 개념별 기여로 분해하고, 이를 이용해 촬영 자세 등 교란 요인을 체계적으로 찾아낸다. 우리 맥락에서는 AP/PA 구성과 라벨 분포를 검토해 이런 감사가 가능한지 확인했다.",
+  "datasets": ["CLEAR 학습: 239,391명 87만 건 영상-보고서 쌍", "외부 검증: 미국·유럽·아시아 4개 의사 주석 데이터셋"],
+  "dataset_note": "개념 수준 교란 감사에는 대규모 영상-보고서 쌍으로 학습된 개념 모델과 교란 요인별로 충분한 양성 사례가 필요하다.",
+  "diffs": [
+    { "ok": true, "text": "AP 88건 / PA 184건이 모두 있어 뷰별 비교 자체는 가능하다." },
+    { "ok": true, "text": "5개 기관과 9종 장비에 AP·PA가 모두 분포해 뷰가 특정 기관·장비로 완전히 분리되지 않는다." },
+    { "ok": false, "text": "개념 모델(CLEAR)이 없고 우리 DenseNet은 개념 기여도를 분해하지 못한다." },
+    { "ok": false, "text": "라벨 14개 중 AP에서 5건 이상인 라벨은 Atelectasis·Effusion·Infiltration뿐이고 나머지는 해석하기에 너무 작다." },
+    { "ok": false, "text": "AP는 비정상 51%(45/88), PA는 45%(82/184)이고 AP의 다중 라벨 비율이 26%(23/88)로 PA 15%(27/184)보다 높아 사례 구성이 다르다." },
+    { "ok": false, "text": "272건이 153명 소속이고 33명이 AP·PA를 모두 가져 검사 간 독립성이 없다." }
+  ],
+  "insight": "우리 코호트로 CLEAR식 개념 감사는 재현할 수 없다. 가져갈 수 있는 것은 AP/PA 성능 차이를 사례 구성 차이와 분리해서 보라는 문제의식과, Atelectasis·Effusion·Infiltration에 한정한 뷰별 성능 비교 설계다.",
+  "evidence": [
+    { "label": "규모", "value": "272건/153명" },
+    { "label": "뷰별 건수", "value": "AP 88 / PA 184" },
+    { "label": "비정상 비율", "value": "AP 45/88, PA 82/184" },
+    { "label": "다중 라벨", "value": "AP 23, PA 27 (전체 50)" },
+    { "label": "AP·PA 모두 보유한 환자", "value": "33명" },
+    { "label": "AP 5건 이상 라벨", "value": "Atelectasis 16, Effusion 17, Infiltration 20" }
+  ],
+  "figure": "",
+  "note": "figure.svg는 모델 성능이 아니라 라벨별 양성 검사 수(AP vs PA)이다. 민감도·AUROC 차이는 이 PR 병합 후 CXR Lens 실행 결과에서 확인해야 하며, 이 코호트의 결과는 가설 생성 수준이다.",
+  "checks": [],
+  "cxr": {
+    "question": "AP와 PA에서 사전학습 DenseNet의 전체 성능(AUROC·민감도)과 CTR 판독이 달라지는가?",
+    "runs": [
+      { "name": "ap", "view": "AP", "label": "", "weights": "all", "why": "AP 88건으로 30건 이상이라 전체 비정상 판별 성능을 기술할 수 있다." },
+      { "name": "pa", "view": "PA", "label": "", "weights": "all", "why": "PA 184건으로 AP와 직접 비교하되 사례 구성 차이가 교란일 수 있다." },
+      { "name": "ap-infil", "view": "AP", "label": "Infiltration", "weights": "all", "why": "AP Infiltration 20건으로 30건 미만이라 기술적 결과일 뿐이며 음성이 없어 AUROC는 계산되지 않는다." }
+    ]
+  }
+}
