@@ -124,12 +124,33 @@ open site/index.html                       # 서버 없이 그대로 열립니�
 대시보드는 데이터를 파일 안에 담은 단일 HTML입니다. fetch도 모듈도 외부 요청도 없어서
 병원 노트북에서 더블클릭 한 번으로 열립니다.
 
+### 영상 분석 하네스 (선택 실습)
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mhlee-ms/medical-sdlc-cxr?quickstart=1)
+
+설치 없이 브라우저에서 하려면 위 버튼을 누르고 [cxr-handson.md](cxr-handson.md)를 따라가세요.
+Codespace가 Python 환경, 모델 가중치, DB를 자동으로 준비합니다(`.devcontainer/`).
+
+DB에 담긴 흉부 X선 272장에 사전학습 모델(torchxrayvision)을 그대로 돌려 소견을 분류하고,
+Grad-CAM으로 근거 부위를 표시하고, 코호트 성능을 리포트와 로컬 웹 뷰어(CXR Lens)로 보여 줍니다.
+Copilot 채팅에서 `/cxr-analysis` 로 부르거나 아래처럼 직접 실행합니다. 자세한 절차와 분석 과제,
+의사 대상 데모 대본은 [.github/skills/cxr-analysis/SKILL.md](.github/skills/cxr-analysis/SKILL.md)에 있습니다.
+
+```bash
+python -m venv .venv && .venv/bin/pip install -r .github/skills/cxr-analysis/requirements.txt
+.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_harness.py check
+.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_harness.py run --name baseline   # runs/cxr/baseline/report.md
+.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_web.py                           # http://127.0.0.1:8765
+```
+
 ## 구성
 
 ```text
 .
+├── .devcontainer/                        # Codespaces: Python · 가중치 · DB 자동 준비
 ├── .github/
 │   ├── ISSUE_TEMPLATE/paper-analysis.yml
+│   ├── skills/cxr-analysis/              # 흉부 X선 분류 · Grad-CAM · 코호트 성능 하네스 + 웹 뷰어 · 데모 대본
 │   └── workflows/
 │       ├── shared/medical-db.md          # DB 서비스 · 마스킹 뷰 조회 도구 (공용)
 │       ├── daily-paper-recommendations.md

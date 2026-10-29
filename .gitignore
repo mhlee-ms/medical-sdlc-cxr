@@ -4,3 +4,5 @@ __pycache__/
 site/index.html
 db/data/images/
 db/data/hospital.csv
+.venv/
+runs/

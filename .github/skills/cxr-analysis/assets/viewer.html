@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CXR Lens — 흉부 X선 판단 근거 뷰어</title>
+<style>
+:root{
+  --bg:#0b0e13;--panel:#121720;--panel2:#181f2b;--line:#243042;--text:#e6ebf2;--muted:#8a97aa;--dim:#5b677a;
+  --teal:#2dd4bf;--amber:#f5a524;--red:#f2555a;--green:#3ddc84;--blue:#5aa9ff;--violet:#a78bfa;
+  --radius:12px;--font:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 var(--font);-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0f141c,#0b0e13)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:.2px}
+.brand .logo{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 210deg,var(--teal),var(--blue),var(--violet),var(--teal));display:grid;place-items:center;color:#05121a;font-size:13px;font-weight:800}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+nav{display:flex;gap:4px;background:var(--panel);padding:4px;border-radius:10px;border:1px solid var(--line)}
+nav button{border:0;background:transparent;padding:6px 14px;border-radius:7px;color:var(--muted);cursor:pointer}
+nav button.on{background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.spacer{flex:1}
+.pill{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.warn{border-color:#5a4316;color:var(--amber);background:#1d170b}
+select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+main{height:calc(100% - 57px)}
+.tab{display:none;height:100%}.tab.on{display:grid}
+/* ---------- viewer ---------- */
+#t-viewer{grid-template-columns:300px 1fr 340px}
+aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.filters{padding:12px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;border-radius:99px;padding:3px 10px;cursor:pointer;font-size:12px;color:var(--muted)}
+.chip.on{color:var(--text);border-color:var(--teal);background:#0f2a28}
+.chip .n{color:var(--dim);margin-left:4px}
+.list{overflow:auto;flex:1}
+.item{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid #1a2230;cursor:pointer}
+.item:hover{background:#151c27}.item.on{background:#13262a;box-shadow:inset 3px 0 0 var(--teal)}
+.item img{width:48px;height:48px;border-radius:6px;object-fit:cover;background:#000}
+.item .id{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.item .lb{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.st{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.3px}
+.st.TP{background:#0f2e1d;color:var(--green)}.st.FN{background:#34151a;color:var(--red)}
+.st.FP{background:#33250c;color:var(--amber)}.st.TN{background:#1a2230;color:var(--muted)}.st.NA{background:#1c1838;color:var(--violet)}
+.stage{display:flex;flex-direction:column;min-height:0;background:#05070a}
+.toolbar{display:flex;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.toolbar label{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px}
+input[type=range]{accent-color:var(--teal);width:110px}
+.tbtn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px}
+.tbtn.on{border-color:var(--teal);color:var(--teal)}
+.canvas-wrap{flex:1;display:grid;place-items:center;position:relative;min-height:0;padding:14px 14px 30px}
+canvas#cv{position:absolute;inset:14px 14px 30px;margin:auto;width:auto;height:auto;max-width:calc(100% - 28px);max-height:calc(100% - 44px);border-radius:6px;box-shadow:0 0 0 1px #1b2433,0 20px 60px #000}
+.hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:11px;color:var(--dim)}
+.drop{position:absolute;inset:14px;border:2px dashed var(--teal);border-radius:12px;background:#0b1a1acc;display:none;place-items:center;font-size:16px;color:var(--teal)}
+.drop.on{display:grid}
+.side{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.card h3{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.gt{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:3px 8px;border-radius:6px;background:#1d2a3c;color:#cfe1ff}
+.tag.none{background:#1a2230;color:var(--muted)}
+.meta{display:flex;gap:12px;color:var(--muted);font-size:12px;margin-top:8px;font-family:ui-monospace,Consolas,monospace}
+.f{display:grid;grid-template-columns:1fr 52px;gap:4px 10px;padding:7px 8px;border-radius:8px;cursor:pointer;align-items:center}
+.f:hover{background:#1b2433}.f.on{background:#10302d;box-shadow:inset 0 0 0 1px #1f5b54}
+.f .nm{font-size:13px;display:flex;align-items:center;gap:6px}
+.f .nm small{color:var(--muted)}
+.f .sc{text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.bar{grid-column:1/3;height:5px;background:#202a3a;border-radius:3px;position:relative;overflow:visible}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--blue)}
+.bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:#e6ebf2aa}
+.f.TP .bar i{background:var(--green)}.f.FN .bar i{background:var(--red)}.f.FP .bar i{background:var(--amber)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+.loc{font-size:15px;font-weight:600}.loc small{display:block;color:var(--muted);font-weight:400;font-size:12px;margin-top:4px}
+.note{font-size:12px;color:var(--muted);line-height:1.55}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:4px}.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+/* ---------- dashboards ---------- */
+.dash{overflow:auto;padding:24px 28px}
+.dash.on{display:block}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.kpi .v{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .v small{font-size:13px;color:var(--muted);font-weight:500}
+.kpi .k{color:var(--muted);font-size:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.panel h2{margin:0 0 4px;font-size:15px}.panel .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+.two{grid-template-columns:1.25fr 1fr}
+@media (max-width:1200px){.two{grid-template-columns:1fr}#t-viewer{grid-template-columns:240px 1fr 300px}}
+svg text{fill:var(--muted);font:11px var(--font)}
+svg .lbl{fill:var(--text);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}.stat .k{font-size:11px;color:var(--muted)}
+.cm{display:grid;grid-template-columns:90px 1fr 1fr;gap:6px;font-size:12px;max-width:380px}
+.cm div{padding:8px;border-radius:8px;background:var(--panel2);text-align:center}
+.cm .h{background:transparent;color:var(--muted)}
+.cm .tp{box-shadow:inset 0 0 0 1px #1f6b44}.cm .fn{box-shadow:inset 0 0 0 1px #6b1f28}
+.cm .fp{box-shadow:inset 0 0 0 1px #6b4d14}
+.cm b{display:block;font-size:20px}
+.empty{color:var(--muted);padding:40px;text-align:center}
+footer{display:none}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid #2dd4bf44;border-top-color:var(--teal);border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+kbd{font:11px ui-monospace,Consolas,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;color:var(--muted)}
+code{font:12px ui-monospace,Consolas,monospace;background:var(--panel2);padding:2px 6px;border-radius:5px}
+/* ---------- summary ---------- */
+.verdict{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding:22px 26px;border-radius:16px;border:1px solid var(--line);
+  background:radial-gradient(1200px 200px at 0% 0%,#2dd4bf14,transparent),linear-gradient(135deg,#131a24,#0f141c)}
+.verdict .badge{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:28px;font-weight:800}
+.verdict h1{margin:0;font-size:22px;letter-spacing:-.2px}.verdict p{margin:6px 0 0;color:var(--muted)}
+.verdict .model{font-size:12px;color:var(--muted);text-align:right;line-height:1.7}
+.v-red .badge{background:#3a1519;color:var(--red);box-shadow:0 0 0 1px #6b1f28,0 0 40px #f2555a33}
+.v-amber .badge{background:#33250c;color:var(--amber);box-shadow:0 0 0 1px #6b4d14,0 0 40px #f5a52433}
+.v-green .badge{background:#0f2e1d;color:var(--green);box-shadow:0 0 0 1px #1f6b44,0 0 40px #3ddc8433}
+.checks{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:16px}
+.chk{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;position:relative;overflow:hidden;cursor:default}
+.chk[data-go]{cursor:pointer}.chk[data-go]:hover{border-color:#33435a}
+.chk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--dim)}
+.chk.red::before{background:var(--red)}.chk.amber::before{background:var(--amber)}.chk.green::before{background:var(--green)}
+.chk .t{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+.chk .v{font-size:24px;font-weight:700;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.chk .d{font-size:12px;color:var(--muted);line-height:1.5}
+.light{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.light.red{background:#3a1519;color:var(--red)}.light.amber{background:#33250c;color:var(--amber)}.light.green{background:#0f2e1d;color:var(--green)}.light.gray{background:#1a2230;color:var(--muted)}
+table.cl{width:100%;border-collapse:collapse;font-size:13px}
+table.cl td{padding:8px 6px;border-bottom:1px solid #1b2433;vertical-align:top}
+table.cl td:first-child{width:28px;text-align:center;font-weight:700}
+table.cl .ok{color:var(--green)}.cl .part{color:var(--amber)}.cl .no{color:var(--red)}
+.thbar{height:6px;border-radius:3px;background:#2a1a1d;margin-top:10px;overflow:hidden}.thbar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--green))}
+.warnbox{margin-top:10px;padding:8px 10px;border-radius:8px;background:#3a1519;color:#ffb3b6;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">CX</div><div>CXR Lens<small>흉부 X선 판단 근거 뷰어</small></div></div>
+  <nav id="nav">
+    <button data-tab="viewer" class="on">증례</button>
+    <button data-tab="cohort">코호트 성능</button>
+    <button data-tab="thresh">임계값</button>
+    <button data-tab="compare">모델 비교</button>
+    <button data-tab="summary">검증 리포트</button>
+  </nav>
+  <div class="spacer"></div>
+  <span class="pill" id="runinfo"></span>
+  <select id="run" title="분석 런"></select>
+  <span class="pill warn">연구·교육용 · 진단 목적 사용 금지</span>
+</header>
+<main>
+  <!-- ======================= summary ======================= -->
+  <section class="tab dash" id="t-summary">
+    <div class="verdict" id="verdict"></div>
+    <div class="grid checks" id="checks"></div>
+    <div class="grid two" style="margin-top:16px">
+      <div class="panel"><h2>보고 지침 대비 — 이 검증이 한 것과 하지 않은 것</h2>
+        <div class="sub">TRIPOD+AI(BMJ 2024) · CLAIM 2024(Radiology: AI) · DECIDE-AI(Nat Med 2022)의 핵심 항목 기준</div>
+        <table class="cl" id="checklist"></table></div>
+      <div class="panel"><h2>자동 심흉비(CTR) vs 모델의 심비대 점수</h2>
+        <div class="sub">폐·심장 분할로 측정한 CTR과 모델 점수가 같은 것을 보고 있는가. 점 클릭 → 증례. 빈 점 = AP(과대측정)</div>
+        <div id="ctrPlot"></div></div>
+    </div>
+  </section>
+  <!-- ======================= viewer ======================= -->
+  <section class="tab on" id="t-viewer">
+    <aside>
+      <div class="filters">
+        <div class="row">
+          <label class="note" style="min-width:34px">기준</label>
+          <select id="basis" style="flex:1"></select>
+        </div>
+        <div class="row" id="statusChips"></div>
+        <div class="row">
+          <select id="viewF"><option value="">AP+PA</option><option>PA</option><option>AP</option></select>
+          <select id="labelF" style="flex:1"></select>
+        </div>
+        <div class="row"><button class="tbtn" id="uploadBtn" style="width:100%">＋ 내 영상 분석 (PNG/JPEG · 로컬 처리)</button><input type="file" id="file" accept="image/png,image/jpeg" hidden></div>
+      </div>
+      <div class="list" id="list"></div>
+    </aside>
+    <div class="stage">
+      <div class="toolbar">
+        <label>히트맵 <input type="range" id="opacity" min="0" max="1" step="0.05" value="0.65"></label>
+        <label>밝기 <input type="range" id="bright" min="0.5" max="1.8" step="0.05" value="1"></label>
+        <label>대비 <input type="range" id="contrast" min="0.5" max="2.2" step="0.05" value="1"></label>
+        <button class="tbtn on" id="boxBtn">박스 <kbd>B</kbd></button>
+        <button class="tbtn on" id="heatBtn">히트맵 <kbd>H</kbd></button>
+        <button class="tbtn on" id="anatBtn">해부학 <kbd>A</kbd></button>
+        <button class="tbtn" id="ctrBtn">심흉비 <kbd>C</kbd></button>
+        <button class="tbtn" id="resetBtn">초기화</button>
+      </div>
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="cv" width="1024" height="1024"></canvas>
+        <div class="hint"><kbd>↑</kbd><kbd>↓</kbd> 증례 · <kbd>1</kbd>–<kbd>9</kbd> 소견 · <kbd>Space</kbd> 누르는 동안 원본</div>
+        <div class="drop" id="drop">여기에 놓으면 이 PC에서만 분석합니다 (저장하지 않음)</div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3>정답 라벨 (NIH)</h3>
+        <div class="gt" id="gt"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+      <div class="card">
+        <h3>모델이 주목한 영역</h3>
+        <div class="loc" id="loc">—</div>
+        <div id="thorax"></div>
+        <div class="note" style="margin-top:10px">히트맵은 해당 소견 점수에 <b>기여한 영역</b>(Grad-CAM)이며 병변 위치가 아닙니다. 위치는 폐·심장 분할 기준이며 우/좌는 환자 기준입니다.</div>
+      </div>
+      <div class="card" id="ctrCard" style="display:none">
+        <h3>자동 심흉비 (CTR)</h3>
+        <div class="loc" id="ctrVal"></div>
+      </div>
+      <div class="card" style="padding:10px 8px">
+        <h3 style="padding:0 6px">14개 소견 점수 <span id="thrLbl" style="text-transform:none"></span></h3>
+        <div id="findings"></div>
+        <div class="legend" style="padding:8px 6px 0">
+          <span><i style="background:var(--green)"></i>정답·양성</span><span><i style="background:var(--red)"></i>놓침</span>
+          <span><i style="background:var(--amber)"></i>과잉</span><span><span class="dot"></span>정답 라벨</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= cohort ======================= -->
+  <section class="tab dash" id="t-cohort">
+    <div class="grid kpis" id="kpis"></div>
+    <div class="grid two" style="margin-top:16px">
+      <div class="panel"><h2>소견별 AUROC</h2><div class="sub">점 = AUROC, 선 = 부트스트랩 95% CI, 빈 점 = 양성 또는 음성 5건 미만(결론 금지). 오른쪽 = AUROC · 양성/전체</div><div id="forest"></div></div>
+      <div class="panel"><h2>하위군 — 이상 소견 유무</h2><div class="sub">촬영 자세 · 성별 · 연령 구간(k-익명성 때문에 40년 단위)</div><div id="subg"></div>
+        <div class="note" style="margin-top:16px" id="caveats"></div></div>
+    </div>
+  </section>
+
+  <!-- ======================= threshold ======================= -->
+  <section class="tab dash" id="t-thresh">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div><h2>임계값을 움직이면 무엇이 바뀌나</h2><div class="sub">여기서 정한 임계값과 기준 소견이 증례 탭의 놓침/과잉 표시에도 그대로 적용됩니다.</div></div>
+        <select id="thClass"></select>
+      </div>
+      <div class="row" style="gap:14px"><input type="range" id="thr" min="0.05" max="0.95" step="0.005" value="0.5" style="flex:1;width:auto"><b id="thrV" style="font-size:20px;min-width:60px;text-align:right">0.500</b></div>
+      <div class="stats" id="thStats"></div>
+      <div class="grid two">
+        <div><div class="sub">ROC 곡선 · 점 = 현재 임계값</div><div id="roc"></div></div>
+        <div><div class="sub">점수 분포 (각 군 내 비율) · 세로선 = 현재 임계값</div><div id="hist"></div>
+          <div style="margin-top:16px" class="cm" id="cm"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= compare ======================= -->
+  <section class="tab dash" id="t-compare">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div><h2>모델 비교 — 같은 영상, 다른 가중치</h2><div class="sub">NIH 영상을 학습에 쓰지 않은 가중치(densenet121-res224-pc)와 비교하면 데이터 누출의 크기를 가늠할 수 있습니다.</div></div>
+        <div class="row"><select id="runA"></select><span class="note">vs</span><select id="runB"></select></div>
+      </div>
+      <div id="cmp"></div>
+    </div>
+  </section>
+</main>
+<footer>모든 결과는 연구·교육용 · 임상 판단 전 의사 검토 필요</footer>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (v, d = 3) => v == null ? "–" : (+v).toFixed(d);
+const pct = v => v == null ? "–" : (v * 100).toFixed(1) + "%";
+const ci = m => m && m.auroc_95ci ? m.auroc_95ci.map(v => (+v).toFixed(2)).join("–") : "–";
+const S = {ko:{}, runs:[], data:null, list:[], uploads:[], study:null, finding:null, order:[], basis:"any", status:"all",
+  thr:0.5, opacity:0.65, box:true, heat:true, anat:true, ctr:false, peek:false, bright:1, contrast:1, cam:null, base:null, an:null, req:0};
+const STATUS = [["all","전체"],["FN","놓침"],["FP","과잉"],["TP","적중"],["TN","정상 일치"],["SC","흉강 밖 근거"]];
+const STATUS_KO = {TP:"적중",FN:"놓침",FP:"과잉",TN:"정상",NA:"업로드"};
+const top1Region = r => (r.regions || {})[r.top[0]] || {};
+const isSC = r => !!top1Region(r).shortcut;
+
+async function api(path, opt) {
+  const r = await fetch(path, opt);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+  return r.json();
+}
+
+/* ------------------------------------------------------------ core helpers */
+const classes = () => S.data.run.classes;
+const ko = c => S.ko[c] || c;
+const maxScore = r => Math.max(...Object.values(r.scores));
+const basisScore = (r, b = S.basis) => b === "any" ? maxScore(r) : r.scores[b];
+const basisTruth = (r, b = S.basis) => r.labels == null ? null : b === "any" ? r.labels.length > 0 : r.labels.includes(b);
+function status(r, b = S.basis) {
+  const t = basisTruth(r, b); if (t == null) return "NA";
+  const p = basisScore(r, b) >= S.thr;
+  return t ? (p ? "TP" : "FN") : (p ? "FP" : "TN");
+}
+function classStatus(r, c) {
+  if (r.labels == null) return "";
+  const t = r.labels.includes(c), p = r.scores[c] >= S.thr;
+  return t ? (p ? "TP" : "FN") : (p ? "FP" : "");
+}
+
+/* ------------------------------------------------------------ boot */
+async function refreshRuns() {
+  const runs = await api("/api/runs").catch(() => null);
+  if (!runs || runs.map(r => r.run_id).join() === S.runs.map(r => r.run_id).join()) return;
+  S.runs = runs;
+  const opts = runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
+  for (const id of ["#run", "#runA", "#runB"]) { const v = $(id).value; $(id).innerHTML = opts; if (runs.some(r => r.run_id === v)) $(id).value = v; }
+}
+
+async function boot() {
+  S.ko = (await api("/api/meta")).ko;
+  S.runs = await api("/api/runs");
+  const opts = S.runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
+  const pref = S.runs.find(r => r.run_id === "baseline") || S.runs[0];
+  const other = S.runs.find(r => r.run_id !== pref.run_id) || pref;
+  $("#run").innerHTML = $("#runA").innerHTML = $("#runB").innerHTML = opts;
+  $("#run").value = $("#runA").value = pref.run_id;
+  $("#runB").value = other.run_id;
+  $("#run").onchange = e => loadRun(e.target.value);
+  $("#runA").onchange = $("#runB").onchange = renderCompare;
+  // New runs started from Copilot chat should appear without reloading the page.
+  ["#run", "#runA", "#runB"].forEach(id => $(id).addEventListener("pointerdown", refreshRuns));
+  setInterval(refreshRuns, 10000);
+  await loadRun(pref.run_id);
+}
+
+async function loadRun(name) {
+  S.data = await api(`/api/runs/${encodeURIComponent(name)}`);
+  S.cam = null; S.study = null;
+  const r = S.data.run;
+  $("#runinfo").textContent = `${r.n_studies}건 · ${r.weights}`;
+  const opts = `<option value="any">이상 소견 유무</option>` + classes().map(c => `<option value="${c}">${c} (${ko(c)})</option>`).join("");
+  $("#basis").innerHTML = $("#thClass").innerHTML = opts;
+  if (!classes().includes(S.basis)) S.basis = "any";
+  $("#basis").value = $("#thClass").value = S.basis;
+  const labels = [...new Set(S.data.findings.flatMap(f => f.labels))].sort();
+  $("#labelF").innerHTML = `<option value="">정답 라벨 전체</option><option value="__none">No Finding</option>` + labels.map(l => `<option>${esc(l)}</option>`).join("");
+  renderList(); renderCohort(); renderThresh(); renderCompare(); renderSummary();
+}
+
+/* ------------------------------------------------------------ list */
+function filtered() {
+  const v = $("#viewF").value, l = $("#labelF").value;
+  const rows = S.data.findings.filter(r =>
+    (!v || r.view === v) &&
+    (!l || (l === "__none" ? r.labels.length === 0 : r.labels.includes(l))) &&
+    (S.status === "all" || (S.status === "SC" ? isSC(r) : status(r) === S.status)));
+  const dir = S.status === "FN" ? 1 : -1;
+  if (S.status === "SC") rows.sort((a, b) => top1Region(a).in_thorax_pct - top1Region(b).in_thorax_pct);
+  else rows.sort((a, b) => dir * (basisScore(a) - basisScore(b)));
+  return [...S.uploads, ...rows];
+}
+function renderChips() {
+  const cnt = {all: S.data.findings.length, SC: S.data.findings.filter(isSC).length};
+  S.data.findings.forEach(r => { const s = status(r); cnt[s] = (cnt[s] || 0) + 1; });
+  const chips = STATUS.filter(([k]) => k !== "SC" || S.data.run.anatomy);
+  $("#statusChips").innerHTML = chips.map(([k, t]) => `<button class="chip ${S.status === k ? "on" : ""}" data-s="${k}">${t}<span class="n">${cnt[k] || 0}</span></button>`).join("");
+  $("#statusChips").querySelectorAll(".chip").forEach(b => b.onclick = () => { S.status = b.dataset.s; renderList(); });
+}
+function renderList() {
+  renderChips();
+  S.list = filtered();
+  $("#list").innerHTML = S.list.map((r, i) => {
+    const st = status(r);
+    const lab = r.uploaded ? "업로드 영상 · 정답 없음" : (r.labels.join(", ") || "No Finding");
+    return `<div class="item ${S.study && S.study.id === r.id ? "on" : ""}" data-i="${i}">
+      <img loading="lazy" src="/api/image/${encodeURIComponent(r.id)}.jpg?size=96" alt="">
+      <div><div class="id">…${esc(r.id.slice(-8))} <span class="note">${esc(r.view)}</span></div><div class="lb">${esc(lab)}</div></div>
+      <div style="text-align:right"><span class="st ${st}">${STATUS_KO[st]}</span><div class="note" style="font-variant-numeric:tabular-nums">${fmt(basisScore(r))}</div></div></div>`;
+  }).join("") || `<div class="empty">조건에 맞는 증례가 없습니다</div>`;
+  $("#list").querySelectorAll(".item").forEach(el => el.onclick = () => openStudy(S.list[+el.dataset.i]));
+  if (!S.study || !S.list.some(r => r.id === S.study.id)) { if (S.list[0]) openStudy(S.list[0]); }
+}
+
+/* ------------------------------------------------------------ study viewer */
+const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+
+async function openStudy(r, finding) {
+  S.study = r; S.cam = null;
+  document.querySelectorAll(".item").forEach(el => el.classList.toggle("on", S.list[+el.dataset.i] === r));
+  document.querySelector(".item.on")?.scrollIntoView({block: "nearest"});
+  $("#gt").innerHTML = r.uploaded ? `<span class="tag none">정답 없음 (업로드)</span>` :
+    (r.labels.length ? r.labels.map(l => `<span class="tag">${esc(l)} · ${esc(ko(l))}</span>`).join("") : `<span class="tag none">No Finding</span>`);
+  $("#meta").innerHTML = `<span>ID …${esc(r.id.slice(-8))}</span><span>${esc(r.view)}</span><span>${esc(r.sex)}</span><span>${esc(r.age_bin)}${r.uploaded ? "" : "세"}</span>`;
+  const [img, an] = await Promise.all([loadImg(`/api/image/${encodeURIComponent(r.id)}.jpg`), api(`/api/anatomy/${encodeURIComponent(r.id)}`).catch(() => null)])
+    .catch(() => { $("#loc").innerHTML = `<span style="color:var(--red)">영상을 불러오지 못했습니다 — 서버(cxr_web.py)가 실행 중인지 확인하세요</span>`; return [null, null]; });
+  if (S.study !== r || !img) return;
+  if (!r.uploaded) history.replaceState(null, "", `#run=${encodeURIComponent(S.data.run.run_id)}&case=${r.id.slice(-8)}`);
+  S.base = img; S.an = an;
+  const c = an && an.ctr;
+  $("#ctrCard").style.display = c ? "" : "none";
+  if (c) $("#ctrVal").innerHTML = `<span style="color:${c.ctr > 0.5 ? "var(--red)" : "var(--green)"}">${c.ctr.toFixed(2)}</span> <small style="display:inline">${c.ctr > 0.5 ? "> 0.5 · 심비대 기준 초과" : "≤ 0.5"}</small>
+    <small>모델 심비대 점수 ${fmt(r.scores.Cardiomegaly)} · 정답 라벨 ${r.labels && r.labels.includes("Cardiomegaly") ? "심비대" : "심비대 아님"}${r.view === "AP" ? " · AP는 과대측정" : ""}</small>`;
+  renderFindings();
+  selectFinding(finding && r.scores[finding] != null ? finding : S.basis !== "any" && r.scores[S.basis] != null ? S.basis : r.top[0]);
+}
+
+function renderFindings() {
+  const r = S.study; if (!r) return;
+  S.order = Object.keys(r.scores).sort((a, b) => r.scores[b] - r.scores[a]);
+  $("#thrLbl").textContent = `· 임계값 ${S.thr.toFixed(3)}`;
+  $("#findings").innerHTML = S.order.map((c, i) => {
+    const gt = r.labels && r.labels.includes(c);
+    return `<div class="f ${classStatus(r, c)} ${S.finding === c ? "on" : ""}" data-c="${c}" title="${i < 9 ? "단축키 " + (i + 1) : ""}">
+      <div class="nm">${gt ? '<span class="dot"></span>' : ""}${c}<small>${ko(c)}</small></div><div class="sc">${fmt(r.scores[c])}</div>
+      <div class="bar"><i style="width:${(r.scores[c] * 100).toFixed(1)}%"></i><s style="left:${S.thr * 100}%"></s></div></div>`;
+  }).join("");
+  $("#findings").querySelectorAll(".f").forEach(el => el.onclick = () => selectFinding(el.dataset.c));
+}
+
+const LUT = (() => {
+  const stops = [[0,0,4],[87,16,110],[188,55,84],[249,142,9],[252,255,164]], out = new Uint8ClampedArray(256 * 3);
+  for (let i = 0; i < 256; i++) {
+    const p = i / 255 * (stops.length - 1), lo = Math.min(Math.floor(p), stops.length - 2), t = p - lo;
+    for (let k = 0; k < 3; k++) out[i * 3 + k] = (1 - t) * stops[lo][k] + t * stops[lo + 1][k];
+  }
+  return out;
+})();
+
+async function selectFinding(c) {
+  S.finding = c; renderFindings();
+  const r = S.study, req = ++S.req;
+  $("#loc").innerHTML = `<span class="spin"></span> <span class="note">Grad-CAM 계산 중…</span>`;
+  try {
+    const res = await api(`/api/cam/${encodeURIComponent(r.id)}/${encodeURIComponent(c)}?weights=${encodeURIComponent(S.data.run.weights)}`);
+    if (req !== S.req) return;
+    const g = await loadImg(res.cam), off = document.createElement("canvas");
+    off.width = off.height = 512;
+    const ox = off.getContext("2d"); ox.drawImage(g, 0, 0, 512, 512);
+    const px = ox.getImageData(0, 0, 512, 512), d = px.data;
+    for (let i = 0; i < d.length; i += 4) { const v = d[i]; d[i] = LUT[v*3]; d[i+1] = LUT[v*3+1]; d[i+2] = LUT[v*3+2]; d[i+3] = v; }
+    ox.putImageData(px, 0, 0);
+    S.cam = {canvas: off, region: res.region, finding: c, score: res.score};
+    const rg = res.region || {};
+    const where = rg.structure || rg.location;
+    $("#loc").innerHTML = where ? `${esc(where)}<small>${c} (${ko(c)}) · 점수 ${fmt(res.score)} · 영역 ${rg.area_pct}%${rg.location && rg.structure ? " · " + esc(rg.location) : ""}</small>` : `—<small>뚜렷한 영역 없음</small>`;
+    $("#thorax").innerHTML = rg.in_thorax_pct == null ? "" :
+      `<div class="note" style="margin-top:10px;display:flex;justify-content:space-between"><span>근거 중 흉강(흰 점선) 안</span><b style="color:${rg.shortcut ? "var(--red)" : "var(--text)"}">${rg.in_thorax_pct.toFixed(0)}%</b></div>
+       <div class="thbar"><i style="width:${rg.in_thorax_pct}%;${rg.shortcut ? "background:var(--red)" : ""}"></i></div>` +
+      (rg.shortcut ? `<div class="warnbox">⚠ 근거의 절반 이상이 흉강 밖입니다 — 영상 경계·글자·장치·복부 같은 지름길을 보고 있을 수 있습니다.</div>` : "");
+    if (c === "Cardiomegaly" && !S.ctr) { S.ctr = true; $("#ctrBtn").classList.add("on"); }
+  } catch (e) { if (req === S.req) { $("#loc").innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; S.cam = null; } }
+  draw();
+}
+
+function draw() {
+  const cv = $("#cv"), x = cv.getContext("2d");
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.clearRect(0, 0, cv.width, cv.height);
+  if (!S.base || !S.study) return;
+  x.setTransform(cv.width / 512, 0, 0, cv.height / 512, 0, 0);
+  x.filter = `brightness(${S.bright}) contrast(${S.contrast})`;
+  x.drawImage(S.base, 0, 0, 512, 512);
+  x.filter = "none";
+  const r = S.study, cam = S.cam, font = getComputedStyle(document.body).fontFamily;
+  if (cam && !S.peek && S.heat) { x.globalAlpha = S.opacity; x.drawImage(cam.canvas, 0, 0); x.globalAlpha = 1; }
+  if (S.an && S.anat && !S.peek) {
+    const col = {"Right Lung": "rgba(45,212,191,.85)", "Left Lung": "rgba(45,212,191,.85)", "Heart": "rgba(245,165,36,.9)", "Thorax": "rgba(230,235,242,.35)"};
+    x.lineWidth = 1.2;
+    for (const [name, polys] of Object.entries(S.an.contours || {})) {
+      x.strokeStyle = col[name] || "#fff"; x.setLineDash(name === "Thorax" ? [2, 4] : [5, 4]);
+      polys.forEach(p => { x.beginPath(); p.forEach(([px, py], i) => i ? x.lineTo(px, py) : x.moveTo(px, py)); x.closePath(); x.stroke(); });
+      if (name === "Thorax") continue;
+      const big = polys.slice().sort((a, b) => b.length - a.length)[0];
+      if (big) {
+        const top = big.reduce((a, b) => (b[1] < a[1] ? b : a));
+        x.setLineDash([]); x.font = `600 11px ${font}`; x.fillStyle = col[name];
+        const label = (S.an.names || {})[name] || name;
+        x.fillText(label, name === "Heart" ? top[0] - 12 : top[0] - 10, name === "Heart" ? top[1] + 14 : top[1] - 6);
+        x.setLineDash([5, 4]);
+      }
+    }
+    x.setLineDash([]);
+  }
+  if (S.an && S.an.ctr && S.ctr && !S.peek) {
+    const c = S.an.ctr, line = ([x0, y, x1], color, label, below) => {
+      x.strokeStyle = color; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(x0, y); x.lineTo(x1, y); x.moveTo(x0, y - 7); x.lineTo(x0, y + 7); x.moveTo(x1, y - 7); x.lineTo(x1, y + 7); x.stroke();
+      x.font = `600 11px ${font}`; x.fillStyle = color; x.fillText(label, (x0 + x1) / 2 - x.measureText(label).width / 2, below ? y + 16 : y - 6);
+    };
+    line(c.thorax, "#5aa9ff", `흉곽 ${c.thorax[2] - c.thorax[0]}px`, true);
+    line(c.heart, "#f5a524", `심장 ${c.heart[2] - c.heart[0]}px`, false);
+    const tag = `CTR ${c.ctr.toFixed(2)}`;
+    x.font = `700 15px ${font}`; const w = x.measureText(tag).width + 14;
+    x.fillStyle = c.ctr > 0.5 ? "#f2555a" : "#3ddc84"; x.fillRect(512 - w - 10, 10, w, 24);
+    x.fillStyle = "#05070a"; x.fillText(tag, 512 - w - 3, 27);
+  }
+  if (cam && !S.peek) {
+    const b = cam.region && cam.region.bbox, bad = cam.region && cam.region.shortcut, color = bad ? "#f2555a" : "#2dd4bf";
+    if (S.box && b) {
+      x.strokeStyle = color; x.lineWidth = 2; x.strokeRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+      const tag = `${cam.finding} ${fmt(cam.score, 2)}${bad ? " · 흉강 밖 근거" : ""}`;
+      x.font = `600 12px ${font}`;
+      const w = x.measureText(tag).width + 10, ty = b[1] >= 20 ? b[1] - 19 : b[1] + 1;
+      x.fillStyle = color; x.fillRect(b[0], ty, w, 18); x.fillStyle = "#04120f"; x.fillText(tag, b[0] + 5, ty + 13);
+    }
+    const pk = cam.region && cam.region.peak;
+    if (S.box && pk) {
+      x.strokeStyle = "#fff"; x.lineWidth = 1.5;
+      x.beginPath(); x.arc(pk[0], pk[1], 7, 0, Math.PI * 2); x.moveTo(pk[0] - 12, pk[1]); x.lineTo(pk[0] - 4, pk[1]); x.moveTo(pk[0] + 4, pk[1]); x.lineTo(pk[0] + 12, pk[1]);
+      x.moveTo(pk[0], pk[1] - 12); x.lineTo(pk[0], pk[1] - 4); x.moveTo(pk[0], pk[1] + 4); x.lineTo(pk[0], pk[1] + 12); x.stroke();
+    }
+  }
+  const truth = r.uploaded ? "정답 없음" : (r.labels.join(", ") || "No Finding");
+  const lines = [[`…${r.id.slice(-8)} · ${r.view}`, "#cfd8e3"], [`정답 ${truth}`, "#2dd4bf"]];
+  if (S.peek) lines.push(["원본", "#f5a524"]);
+  x.font = `500 11px ${font}`; x.shadowColor = "#000"; x.shadowBlur = 4;
+  lines.forEach(([t, c], i) => { x.fillStyle = c; x.fillText(t, 10, 512 - 12 - (lines.length - 1 - i) * 15); });
+  x.shadowBlur = 0;
+}
+
+/* ------------------------------------------------------------ cohort */
+function forest(items, lo) {
+  const hi = 1, W = 620, rowH = 26, L = 190, R = 90, H = items.length * rowH + 34, sx = v => L + (v - lo) / (hi - lo) * (W - L - R);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for (let t = Math.ceil(lo * 10) / 10; t <= hi + 1e-9; t += 0.1) g += `<line x1="${sx(t)}" x2="${sx(t)}" y1="6" y2="${H - 22}" stroke="#1f2938"/><text x="${sx(t)}" y="${H - 6}" text-anchor="middle">${t.toFixed(1)}</text>`;
+  g += `<line x1="${sx(.5)}" x2="${sx(.5)}" y1="6" y2="${H - 22}" stroke="#f2555a" stroke-dasharray="3 3"/>`;
+  items.forEach((it, i) => {
+    const y = 18 + i * rowH, m = it.m, weak = m.underpowered, col = weak ? "#5b677a" : "#2dd4bf", c = v => sx(Math.min(hi, Math.max(lo, v)));
+    g += `<text class="lbl" x="8" y="${y + 4}" ${weak ? 'style="fill:#8a97aa"' : ""}>${esc(it.label)}</text>`;
+    if (m.auroc_95ci) g += `<line x1="${c(m.auroc_95ci[0])}" x2="${c(m.auroc_95ci[1])}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
+    if (m.auroc != null) g += `<circle cx="${c(m.auroc)}" cy="${y}" r="5" fill="${weak ? "#121720" : col}" stroke="${col}" stroke-width="2"><title>AUROC ${fmt(m.auroc)} (95% CI ${ci(m)})</title></circle>`;
+    g += `<text x="${W - 8}" y="${y + 4}" text-anchor="end">${fmt(m.auroc, 2)} · ${m.positives}/${m.n}</text>`;
+  });
+  return g + "</svg>";
+}
+function renderCohort() {
+  const {metrics: M, findings: F, run} = S.data, a = M.any_finding;
+  const abn = F.filter(r => r.labels.length);
+  const top1 = abn.filter(r => r.labels.includes(r.top[0])).length, topk = abn.filter(r => r.top.some(t => r.labels.includes(t))).length;
+  const diffuse = F.filter(r => (r.regions[r.top[0]] || {}).location === "광범위(비특이적)").length;
+  const k = (key, v, sub) => `<div class="kpi"><div class="k">${key}</div><div class="v">${v}${sub ? ` <small>${sub}</small>` : ""}</div></div>`;
+  $("#kpis").innerHTML = k("영상", run.n_studies, `이상 소견 ${abn.length}건 (${pct(abn.length / F.length)})`) +
+    k("이상 소견 유무 AUROC", fmt(a.auroc), a.auroc_95ci ? `95% CI ${ci(a)}` : "") +
+    k("1순위 소견이 정답", `${top1}/${abn.length}`, pct(top1 / abn.length)) +
+    k(`상위 ${run.top_k}개 안에 정답`, `${topk}/${abn.length}`, pct(topk / abn.length)) +
+    k("근거가 광범위한 판정", `${diffuse}/${F.length}`, "1순위 소견 기준");
+  const per = Object.entries(M.per_class).sort((x, y) => y[1].positives - x[1].positives).map(([c, m]) => ({label: `${c} · ${ko(c)}`, m}));
+  $("#forest").innerHTML = forest(per, 0.2);
+  $("#subg").innerHTML = forest(Object.entries(M.subgroups).map(([g, m]) => ({label: g.replace("view=", "촬영 ").replace("sex=", "성별 ").replace("age_bin=", "연령 "), m})), 0.3);
+  $("#caveats").innerHTML = `<b>해석 전에</b><br>· 영상은 NIH ChestX-ray14 공개 영상이고 기본 가중치는 NIH로도 학습됐습니다 → 과대평가 가능 (모델 비교 탭)<br>· NIH 라벨은 판독문에서 자동 추출되어 잡음이 있습니다<br>· 병변 위치 정답이 없어 히트맵 위치는 정성 점검만 가능합니다`;
+}
+
+/* ------------------------------------------------------------ summary */
+const LIGHT = {red: "주의", amber: "보통", green: "양호", gray: "미실시"};
+async function renderSummary() {
+  const {run, metrics: M, findings: F} = S.data, a = M.any_finding, an = M.anatomy, checks = [];
+  const tot = Object.keys(M.per_class).length;
+  checks.push({t: "판별 성능 · 이상 소견 유무", s: a.auroc >= 0.8 ? "green" : a.auroc >= 0.7 ? "amber" : "red",
+    v: `AUROC ${fmt(a.auroc)}`, d: `95% CI ${ci(a)} · 이상 소견 ${a.positives}/${a.n}장`, go: "cohort"});
+  const rel = Object.entries(M.per_class).filter(([, m]) => !m.underpowered && m.auroc_95ci && m.auroc_95ci[0] >= 0.7).map(([c]) => c);
+  checks.push({t: "신뢰구간이 받쳐 주는 소견", s: rel.length >= tot / 2 ? "green" : rel.length >= 3 ? "amber" : "red",
+    v: `${rel.length} / ${tot}`, d: rel.length ? `CI 하한 ≥ 0.70: ${rel.map(ko).join(", ")}` : "CI 하한이 0.70을 넘는 소견이 없습니다", go: "cohort"});
+  checks.push({t: "기본 임계값에서의 특이도", s: a.specificity >= 0.7 ? "green" : a.specificity >= 0.4 ? "amber" : "red",
+    v: pct(a.specificity), d: `정상 ${a.fp + a.tn}장 중 ${a.fp}장을 이상으로 판정 · 민감도 ${pct(a.sensitivity)}`, go: "thresh"});
+  if (an) {
+    const rate = an.top1_shortcut / an.top1_n;
+    checks.push({t: "근거의 해부학적 타당성", s: rate < 0.1 ? "green" : rate < 0.25 ? "amber" : "red",
+      v: `흉강 안 ${an.top1_median_in_thorax_pct.toFixed(0)}%`, d: `1순위 근거 중앙값 · 흉강 밖 근거(지름길 의심) ${an.top1_shortcut}/${an.top1_n}장`, go: "viewer-sc"});
+  } else checks.push({t: "근거의 해부학적 타당성", s: "gray", v: "미실시", d: "--no-anatomy 로 실행된 런입니다"});
+  const groups = {};
+  Object.entries(M.subgroups).forEach(([k, m]) => { const [g, v] = k.split("="); (groups[g] ||= []).push([v, m]); });
+  let worst = null;
+  for (const [g, arr] of Object.entries(groups)) {
+    const ok = arr.filter(([, m]) => !m.underpowered && m.auroc != null && m.auroc_95ci);
+    for (let i = 0; i < ok.length; i++) for (let j = i + 1; j < ok.length; j++) {
+      const [va, ma] = ok[i], [vb, mb] = ok[j], d = Math.abs(ma.auroc - mb.auroc);
+      const overlap = ma.auroc_95ci[0] <= mb.auroc_95ci[1] && mb.auroc_95ci[0] <= ma.auroc_95ci[1];
+      if (!worst || d > worst.d) worst = {g, va, vb, ma, mb, d, overlap};
+    }
+  }
+  if (worst) checks.push({t: "하위군 간 일관성", s: worst.d < 0.05 ? "green" : worst.overlap ? "amber" : "red", v: `최대 차이 ${worst.d.toFixed(2)}`,
+    d: `${{view: "촬영", sex: "성별", age_bin: "연령"}[worst.g]} ${worst.va} ${fmt(worst.ma.auroc, 2)} vs ${worst.vb} ${fmt(worst.mb.auroc, 2)} · CI ${worst.overlap ? "겹침 → 차이를 말할 근거 부족" : "안 겹침 → 차이 있음"}`, go: "cohort"});
+  const other = S.runs.find(x => x.run_id !== run.run_id && x.weights !== run.weights && x.n_studies === run.n_studies);
+  if (other) {
+    const O = await api(`/api/runs/${encodeURIComponent(other.run_id)}`), d = O.metrics.any_finding.auroc - a.auroc;
+    checks.push({t: "데이터 누출 점검", s: d > -0.02 ? "green" : d > -0.05 ? "amber" : "red", v: `${d > 0 ? "+" : ""}${d.toFixed(3)}`,
+      d: `NIH를 학습하지 않은 가중치(${other.weights.replace("densenet121-res224-", "")})로 바꾸면 ${fmt(a.auroc)} → ${fmt(O.metrics.any_finding.auroc)}`, go: "compare"});
+  } else checks.push({t: "데이터 누출 점검", s: "gray", v: "미실시", d: "다른 가중치로 한 번 더 실행하면 비교됩니다"});
+  const sus = F.filter(r => r.labels.length === 0 && maxScore(r) >= 0.9);
+  checks.push({t: "라벨 품질 · 재판독 후보", s: sus.length ? "amber" : "green", v: `${sus.length}장`,
+    d: "No Finding인데 어떤 소견이든 0.9 이상 — 모델 오류이거나 라벨 오류", go: "viewer-fp"});
+  const under = Object.values(M.per_class).filter(m => m.underpowered).length, small = Object.values(M.per_class).filter(m => m.positives < 30).length;
+  checks.push({t: "표본 크기", s: small <= tot / 3 ? "green" : under <= 3 ? "amber" : "red", v: `양성 30건 미만 ${small}/${tot}`,
+    d: `5건 미만(결론 금지) ${under}개 소견 · 전체 ${run.n_studies}장`});
+
+  const reds = checks.filter(c => c.s === "red"), ambers = checks.filter(c => c.s === "amber");
+  const [cls, icon, head, why] = reds.length ? ["red", "✕", "도입 전 추가 검증이 필요합니다", `주의 ${reds.length}개: ${reds.map(c => c.t).join(" · ")}`]
+    : ambers.length ? ["amber", "!", "제한적 사용을 검토할 수 있습니다", `보통 ${ambers.length}개 항목을 확인하세요`] : ["green", "✓", "검증 기준을 충족합니다", ""];
+  $("#verdict").className = "verdict v-" + cls;
+  $("#verdict").innerHTML = `<div class="badge">${icon}</div><div><h1>${head}</h1><p>${esc(why)}</p></div>
+    <div class="model">${esc(run.weights)} · 학습 없이 그대로<br>${run.n_studies}장 · 마스킹 뷰 · 이 PC에서 실행<br>판정은 아래 ${checks.length}개 항목에서 자동 산출</div>`;
+  $("#checks").innerHTML = checks.map(c => `<div class="chk ${c.s}" ${c.go ? `data-go="${c.go}"` : ""}>
+    <div class="t"><span>${esc(c.t)}</span><span class="light ${c.s}">${LIGHT[c.s]}</span></div><div class="v">${esc(c.v)}</div><div class="d">${esc(c.d)}</div></div>`).join("");
+  $("#checks").querySelectorAll("[data-go]").forEach(el => el.onclick = () => {
+    const go = el.dataset.go;
+    if (go.startsWith("viewer")) { S.status = go === "viewer-fp" ? "FP" : go === "viewer-sc" ? "SC" : "all"; setBasis("any"); showTab("viewer"); }
+    else showTab(go);
+  });
+  const CL = [
+    ["part", "외부 검증", "학습에 쓰이지 않은 데이터인지 보장할 수 없음(NIH 중복 가능) — 다른 가중치 비교로 부분 대응"],
+    ["ok", "불확실성 보고", "모든 AUROC에 부트스트랩 95% CI, 표본 부족 항목 표시"],
+    ["ok", "하위군 성능", "촬영 자세 · 성별 · 연령 구간별 AUROC"],
+    ["ok", "실패 사례 분석", "놓침 · 과잉 증례를 영상과 근거로 직접 검토"],
+    [an ? "ok" : "no", "설명 근거의 타당성", "Grad-CAM 근거를 폐·심장 분할과 대조" + (an ? "" : " (이 런에서는 미실시)")],
+    ["no", "정답 기준 (reference standard)", "NIH 라벨은 판독문 자동 추출 — 전문의 재판독으로 정답을 다시 세워야 함"],
+    ["no", "보정 (calibration)", "점수가 확률이 아님 — 보정 곡선 미평가"],
+    ["no", "임상적 유용성", "판독자 연구 · decision curve 미실시"],
+    ["no", "실사용 조기 평가", "실제 판독 워크플로 안에서의 평가(DECIDE-AI 단계) 미실시"],
+  ];
+  $("#checklist").innerHTML = CL.map(([s, t, d]) => `<tr><td class="${s}">${{ok: "✓", part: "△", no: "✕"}[s]}</td><td><b>${t}</b><div class="note">${d}</div></td></tr>`).join("");
+  renderCtrPlot();
+}
+
+function renderCtrPlot() {
+  const F = S.data.findings.filter(r => r.ctr && r.scores.Cardiomegaly != null), cm = S.data.metrics.anatomy && S.data.metrics.anatomy.ctr;
+  if (!F.length || !cm) { $("#ctrPlot").innerHTML = `<div class="empty">해부학 분석이 포함된 런에서만 표시됩니다</div>`; return; }
+  const W = 480, H = 320, L = 44, B = 36, T = 12, R = 14, x0 = 0.3, x1 = 0.8;
+  const sx = v => L + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * (W - L - R), sy = v => T + (1 - v) * (H - T - B);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" id="ctrSvg">`;
+  for (let t = 0.3; t <= 0.8 + 1e-9; t += 0.1) g += `<line x1="${sx(t)}" x2="${sx(t)}" y1="${T}" y2="${H - B}" stroke="#1b2433"/><text x="${sx(t)}" y="${H - B + 16}" text-anchor="middle">${t.toFixed(1)}</text>`;
+  for (let t = 0; t <= 1; t += 0.25) g += `<line x1="${L}" x2="${W - R}" y1="${sy(t)}" y2="${sy(t)}" stroke="#1b2433"/><text x="${L - 6}" y="${sy(t) + 4}" text-anchor="end">${t.toFixed(2)}</text>`;
+  g += `<line x1="${sx(.5)}" x2="${sx(.5)}" y1="${T}" y2="${H - B}" stroke="#f2555a" stroke-dasharray="4 4"/><text x="${sx(.5) + 4}" y="${T + 10}" style="fill:#f2555a">CTR 0.5</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${sy(S.thr)}" y2="${sy(S.thr)}" stroke="#f5a524" stroke-dasharray="4 4"/><text x="${W - R}" y="${sy(S.thr) - 4}" text-anchor="end" style="fill:#f5a524">모델 임계값</text>`;
+  g += `<text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">자동 측정 심흉비 (CTR)</text><text x="12" y="${(T + H - B) / 2}" transform="rotate(-90 12 ${(T + H - B) / 2})" text-anchor="middle">모델 심비대 점수</text>`;
+  F.slice().sort((p, q) => (p.labels.includes("Cardiomegaly") ? 1 : 0) - (q.labels.includes("Cardiomegaly") ? 1 : 0)).forEach(r => {
+    const pos = r.labels.includes("Cardiomegaly"), col = pos ? "#f5a524" : "#5aa9ff", ap = r.view === "AP";
+    g += `<circle data-id="${esc(r.id)}" cx="${sx(r.ctr.ctr)}" cy="${sy(r.scores.Cardiomegaly)}" r="${pos ? 6 : 4}" fill="${ap ? "none" : col}" stroke="${col}" stroke-width="1.6" opacity="${pos ? 1 : .6}" style="cursor:pointer">
+      <title>…${esc(r.id.slice(-8))} · ${r.view} · CTR ${r.ctr.ctr.toFixed(2)} · 점수 ${fmt(r.scores.Cardiomegaly)}${pos ? " · 정답 심비대" : ""}</title></circle>`;
+  });
+  g += `</svg>`;
+  const lab = cm.ctr_vs_label, mod = cm.model_vs_label_same_set;
+  $("#ctrPlot").innerHTML = g + `<div class="legend" style="margin-top:6px"><span><i style="background:#f5a524;border-radius:50%"></i>정답 심비대</span><span><i style="background:#5aa9ff;border-radius:50%"></i>그 외</span><span>빈 점 = AP</span></div>
+    <div class="note" style="margin-top:8px">순위 상관 ρ = <b>${fmt(cm.spearman_ctr_vs_model, 2)}</b> · 심비대 라벨 판별 AUROC — CTR <b>${fmt(lab.auroc, 2)}</b> vs 모델 <b>${fmt(mod.auroc, 2)}</b> (양성 ${lab.positives}장${lab.underpowered ? ", 표본 부족" : ""}) · CTR &gt; 0.5 ${cm.ctr_gt_0_5}장</div>`;
+  $("#ctrSvg").querySelectorAll("circle[data-id]").forEach(el => el.onclick = () => { location.hash = `case=${el.dataset.id.slice(-8)}&finding=Cardiomegaly`; });
+}
+
+/* ------------------------------------------------------------ threshold */
+function confusion(b, t) {
+  const c = {tp:0, fp:0, fn:0, tn:0};
+  S.data.findings.forEach(r => { const y = basisTruth(r, b), p = basisScore(r, b) >= t; c[y ? (p ? "tp" : "fn") : (p ? "fp" : "tn")]++; });
+  return c;
+}
+function renderThresh() {
+  const b = $("#thClass").value, t = S.thr, F = S.data.findings, c = confusion(b, t), n = F.length;
+  $("#thrV").textContent = t.toFixed(3); $("#thr").value = t;
+  const r = (a, z) => a + z ? a / (a + z) : null;
+  const st = (k, v, sub) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="k">${sub}</div></div>`;
+  $("#thStats").innerHTML = st("민감도", pct(r(c.tp, c.fn)), `양성 ${c.tp + c.fn}건 중 ${c.tp}건 검출`) + st("특이도", pct(r(c.tn, c.fp)), `음성 ${c.tn + c.fp}건 중 ${c.tn}건 유지`) +
+    st("양성 예측도 PPV", pct(r(c.tp, c.fp)), `음성 예측도 ${pct(r(c.tn, c.fn))}`) + st("판독 대상으로 올라감", `${c.tp + c.fp}/${n}`, `그래도 놓치는 ${c.fn}건`);
+  $("#cm").innerHTML = `<div class="h"></div><div class="h">정답 양성</div><div class="h">정답 음성</div>
+    <div class="h">모델 양성</div><div class="tp"><b>${c.tp}</b>적중</div><div class="fp"><b>${c.fp}</b>과잉</div>
+    <div class="h">모델 음성</div><div class="fn"><b>${c.fn}</b>놓침</div><div><b>${c.tn}</b>정상 일치</div>`;
+  const P = F.filter(x => basisTruth(x, b)).length, N = n - P, W = 360, pad = 34, sz = W - pad - 10;
+  const xy = (fpr, tpr) => [pad + fpr * sz, 10 + (1 - tpr) * sz];
+  const ths = [...new Set(F.map(x => basisScore(x, b)))].sort((x, y) => y - x);
+  let path = "M" + xy(0, 0).join(",");
+  ths.forEach(th => { const k = confusion(b, th); path += " L" + xy(k.fp / (N || 1), k.tp / (P || 1)).join(","); });
+  path += " L" + xy(1, 1).join(",");
+  const op = xy(c.fp / (N || 1), c.tp / (P || 1)), auc = b === "any" ? S.data.metrics.any_finding.auroc : S.data.metrics.per_class[b].auroc;
+  $("#roc").innerHTML = `<svg viewBox="0 0 ${W} ${W}" width="100%" style="max-width:420px">
+    <rect x="${pad}" y="10" width="${sz}" height="${sz}" fill="none" stroke="#243042"/>
+    <line x1="${xy(0,0)[0]}" y1="${xy(0,0)[1]}" x2="${xy(1,1)[0]}" y2="${xy(1,1)[1]}" stroke="#2a3446" stroke-dasharray="4 4"/>
+    <path d="${path}" fill="none" stroke="#5aa9ff" stroke-width="2.5"/>
+    <circle cx="${op[0]}" cy="${op[1]}" r="7" fill="#2dd4bf" stroke="#05121a" stroke-width="2"/>
+    <text x="${pad + sz / 2}" y="${W - 2}" text-anchor="middle">1 − 특이도</text><text x="12" y="${10 + sz / 2}" transform="rotate(-90 12 ${10 + sz / 2})" text-anchor="middle">민감도</text>
+    <text class="lbl" x="${pad + sz - 8}" y="${sz}" text-anchor="end">AUROC ${fmt(auc)} · 양성 ${P}</text></svg>`;
+  const bins = 20, pos = Array(bins).fill(0), neg = Array(bins).fill(0);
+  F.forEach(x => { const i = Math.min(bins - 1, Math.floor(basisScore(x, b) * bins)); (basisTruth(x, b) ? pos : neg)[i]++; });
+  const HW = 420, HH = 180, bw = (HW - 20) / bins, mp = Math.max(...pos.map(v => v / (P || 1)), ...neg.map(v => v / (N || 1)), 0.01);
+  let h = `<svg viewBox="0 0 ${HW} ${HH + 20}" width="100%">`;
+  for (let i = 0; i < bins; i++) {
+    const hn = neg[i] / (N || 1) / mp * HH, hp = pos[i] / (P || 1) / mp * HH;
+    h += `<rect x="${10 + i * bw + 1}" y="${HH - hn}" width="${bw - 2}" height="${hn}" fill="#8a97aa" opacity=".45"><title>음성 ${neg[i]}건</title></rect>`;
+    h += `<rect x="${10 + i * bw + bw * .25}" y="${HH - hp}" width="${bw * .5}" height="${hp}" fill="#2dd4bf" opacity=".9"><title>양성 ${pos[i]}건</title></rect>`;
+  }
+  h += `<line x1="${10 + t * (HW - 20)}" x2="${10 + t * (HW - 20)}" y1="0" y2="${HH}" stroke="#f5a524" stroke-width="2"/>`;
+  h += `<text x="10" y="${HH + 16}">0</text><text x="${HW / 2}" y="${HH + 16}" text-anchor="middle">0.5</text><text x="${HW - 10}" y="${HH + 16}" text-anchor="end">1</text>`;
+  h += `<text class="lbl" x="${HW - 10}" y="14" text-anchor="end"><tspan fill="#2dd4bf">■</tspan> 양성 <tspan fill="#8a97aa">■</tspan> 음성</text></svg>`;
+  $("#hist").innerHTML = h;
+}
+
+/* ------------------------------------------------------------ compare */
+async function renderCompare() {
+  const a = $("#runA").value, b = $("#runB").value;
+  if (!a || a === b) { $("#cmp").innerHTML = `<div class="empty">비교하려면 서로 다른 런 두 개가 필요합니다.<br><br><code>cxr_harness.py run --name padchest --weights densenet121-res224-pc</code></div>`; return; }
+  $("#cmp").innerHTML = `<div class="empty"><span class="spin"></span></div>`;
+  const [A, B] = await Promise.all([a, b].map(n => api(`/api/runs/${encodeURIComponent(n)}`)));
+  const common = A.run.classes.filter(c => B.run.classes.includes(c));
+  const rows = [["이상 소견 유무", A.metrics.any_finding, B.metrics.any_finding],
+    ...common.sort((x, y) => A.metrics.per_class[y].positives - A.metrics.per_class[x].positives).map(c => [`${c} · ${ko(c)}`, A.metrics.per_class[c], B.metrics.per_class[c]])];
+  const W = 760, rowH = 28, L = 210, R = 140, H = rows.length * rowH + 40, lo = 0.2, hi = 1, sx = v => L + (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (W - L - R);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for (let t = lo; t <= hi + 1e-9; t += 0.1) g += `<line x1="${sx(t)}" x2="${sx(t)}" y1="8" y2="${H - 24}" stroke="#1f2938"/><text x="${sx(t)}" y="${H - 8}" text-anchor="middle">${t.toFixed(1)}</text>`;
+  g += `<line x1="${sx(.5)}" x2="${sx(.5)}" y1="8" y2="${H - 24}" stroke="#f2555a" stroke-dasharray="3 3"/>`;
+  rows.forEach(([label, ma, mb], i) => {
+    const y = 22 + i * rowH, va = ma.auroc, vb = mb.auroc, weak = ma.underpowered;
+    g += `<text class="lbl" x="8" y="${y + 4}" ${weak ? 'style="fill:#8a97aa"' : ""}>${esc(label)}${weak ? " ⚠" : ""}</text>`;
+    if (va != null && vb != null) g += `<line x1="${sx(va)}" x2="${sx(vb)}" y1="${y}" y2="${y}" stroke="#3a4558" stroke-width="3"/>`;
+    if (va != null) g += `<circle cx="${sx(va)}" cy="${y}" r="6" fill="#2dd4bf"><title>${esc(a)} ${fmt(va)}</title></circle>`;
+    if (vb != null) g += `<circle cx="${sx(vb)}" cy="${y}" r="6" fill="#f5a524"><title>${esc(b)} ${fmt(vb)}</title></circle>`;
+    const d = va != null && vb != null ? vb - va : null;
+    const col = d == null ? "#8a97aa" : d < -0.03 ? "#f2555a" : d > 0.03 ? "#3ddc84" : "#8a97aa";
+    g += `<text x="${W - 8}" y="${y + 4}" text-anchor="end" style="fill:${col}">${fmt(va, 2)} → ${fmt(vb, 2)} (${d == null ? "–" : (d > 0 ? "+" : "") + d.toFixed(2)})</text>`;
+  });
+  g += `</svg>`;
+  const sa = A.metrics.anatomy, sb = B.metrics.anatomy;
+  const anat = sa && sb ? `<div class="grid kpis" style="margin-top:14px">
+      <div class="kpi"><div class="k">흉강 밖 근거 (지름길 의심) · ${esc(a)}</div><div class="v">${sa.top1_shortcut}/${sa.top1_n} <small>근거 중앙값 흉강 안 ${sa.top1_median_in_thorax_pct.toFixed(0)}%</small></div></div>
+      <div class="kpi"><div class="k">흉강 밖 근거 (지름길 의심) · ${esc(b)}</div><div class="v">${sb.top1_shortcut}/${sb.top1_n} <small>근거 중앙값 흉강 안 ${sb.top1_median_in_thorax_pct.toFixed(0)}%</small></div></div></div>` : "";
+  $("#cmp").innerHTML = `<div class="legend" style="margin-bottom:10px"><span><i style="background:#2dd4bf;border-radius:50%"></i>${esc(a)} · ${esc(A.run.weights)}</span><span><i style="background:#f5a524;border-radius:50%"></i>${esc(b)} · ${esc(B.run.weights)}</span><span>  ⚠ 표본 부족</span></div>${g}${anat}
+      <div class="note" style="margin-top:12px">크게 떨어지는 소견은 기준 성능이 학습 데이터 중복으로 부풀었을 가능성이 있습니다. 다만 학습 데이터 분포 차이(스페인 PadChest vs 미국 NIH)도 함께 작용하므로 둘을 분리할 수는 없습니다. 성능이 높은 쪽의 근거가 흉강 밖에 더 많다면, 높은 성능의 일부가 지름길에서 왔을 가능성을 의심해 볼 수 있습니다(인과 증명은 아님).</div>`;
+}
+
+/* ------------------------------------------------------------ upload */
+async function upload(file) {
+  if (!file) return;
+  $("#loc").innerHTML = `<span class="spin"></span> <span class="note">업로드 영상 분석 중…</span>`;
+  try {
+    const rec = await api(`/api/upload?weights=${encodeURIComponent(S.data.run.weights)}`, {method: "POST", body: file, headers: {"Content-Type": "application/octet-stream"}});
+    S.uploads.unshift(rec); renderList(); openStudy(rec);
+  } catch (e) { $("#loc").innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; }
+}
+
+/* ------------------------------------------------------------ wiring */
+function showTab(name) {
+  if (!$("#t-" + name)) return;
+  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "t-" + name));
+}
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+// Deep links for the demo script. Masked study IDs differ per DB instance, so portable links select by rule:
+//   #basis=Pneumonia&label=__none&pick=1   → the No Finding study with the highest pneumonia score
+//   #basis=Nodule&status=FN&pick=2&finding=Fibrosis, #status=SC&label=__none&pick=1, #tab=thresh&basis=Effusion&thr=0.4
+// #case=<last 8 of masked ID> still works within one DB instance.
+async function applyHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("run") && h.get("run") !== S.data.run.run_id && S.runs.some(r => r.run_id === h.get("run"))) {
+    $("#run").value = h.get("run"); await loadRun(h.get("run"));
+  }
+  if (h.get("thr")) S.thr = Math.min(0.95, Math.max(0.05, +h.get("thr") || 0.5));
+  if (h.has("status")) S.status = h.get("status");
+  if (h.has("view")) $("#viewF").value = h.get("view");
+  if (h.has("label")) $("#labelF").value = h.get("label");
+  if (h.get("basis")) setBasis(h.get("basis")); else { renderThresh(); renderList(); }
+  showTab(h.get("tab") || "viewer");
+  const c = h.get("case"), pick = parseInt(h.get("pick"), 10);
+  let rec = null;
+  if (c) {
+    rec = S.list.find(r => r.id.endsWith(c));
+    if (!rec) { S.status = "all"; $("#viewF").value = $("#labelF").value = ""; renderList(); rec = S.list.find(r => r.id.endsWith(c)); }
+  } else if (pick > 0) {
+    rec = S.list.filter(r => !r.uploaded)[pick - 1];
+  }
+  if (rec) openStudy(rec, h.get("finding"));
+}
+window.addEventListener("hashchange", applyHash);
+const setBasis = v => { S.basis = v; $("#basis").value = $("#thClass").value = v; renderThresh(); renderList(); };
+$("#basis").onchange = e => setBasis(e.target.value);
+$("#thClass").onchange = e => setBasis(e.target.value);
+$("#viewF").onchange = $("#labelF").onchange = () => renderList();
+$("#thr").oninput = e => { S.thr = +e.target.value; renderThresh(); renderChips(); renderFindings(); };
+$("#thr").onchange = () => { renderList(); renderCtrPlot(); };
+$("#opacity").oninput = e => { S.opacity = +e.target.value; draw(); };
+$("#bright").oninput = e => { S.bright = +e.target.value; draw(); };
+$("#contrast").oninput = e => { S.contrast = +e.target.value; draw(); };
+const toggle = (k, id) => { S[k] = !S[k]; $(id).classList.toggle("on", S[k]); draw(); };
+$("#boxBtn").onclick = () => toggle("box", "#boxBtn");
+$("#heatBtn").onclick = () => toggle("heat", "#heatBtn");
+$("#anatBtn").onclick = () => toggle("anat", "#anatBtn");
+$("#ctrBtn").onclick = () => toggle("ctr", "#ctrBtn");
+$("#resetBtn").onclick = () => { S.opacity = .65; S.bright = 1; S.contrast = 1; $("#opacity").value = .65; $("#bright").value = 1; $("#contrast").value = 1; draw(); };
+$("#uploadBtn").onclick = () => $("#file").click();
+$("#file").onchange = e => { upload(e.target.files[0]); e.target.value = ""; };
+const wrap = $("#wrap");
+wrap.ondragover = e => { e.preventDefault(); $("#drop").classList.add("on"); };
+wrap.ondragleave = () => $("#drop").classList.remove("on");
+wrap.ondrop = e => { e.preventDefault(); $("#drop").classList.remove("on"); upload(e.dataTransfer.files[0]); };
+document.addEventListener("keydown", e => {
+  if (!$("#t-viewer").classList.contains("on") || ["SELECT", "INPUT"].includes(e.target.tagName)) return;
+  const i = S.list.indexOf(S.study);
+  if (e.key === "ArrowDown" && S.list[i + 1]) { e.preventDefault(); openStudy(S.list[i + 1]); }
+  else if (e.key === "ArrowUp" && i > 0) { e.preventDefault(); openStudy(S.list[i - 1]); }
+  else if (e.key === " ") { e.preventDefault(); if (!S.peek) { S.peek = true; draw(); } }
+  else if (e.key === "b" || e.key === "B") toggle("box", "#boxBtn");
+  else if (e.key === "h" || e.key === "H") toggle("heat", "#heatBtn");
+  else if (e.key === "a" || e.key === "A") toggle("anat", "#anatBtn");
+  else if (e.key === "c" || e.key === "C") toggle("ctr", "#ctrBtn");
+  else if (/^[1-9]$/.test(e.key) && S.order[+e.key - 1]) selectFinding(S.order[+e.key - 1]);
+});
+document.addEventListener("keyup", e => { if (e.key === " " && S.peek) { S.peek = false; draw(); } });
+boot().then(() => location.hash.length > 1 && applyHash())
+  .catch(e => { document.querySelector("main").innerHTML = `<div class="empty">불러오지 못했습니다: ${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

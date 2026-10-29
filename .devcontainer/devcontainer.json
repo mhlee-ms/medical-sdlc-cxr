@@ -1,0 +1,36 @@
+{
+  "name": "medical-sdlc · CXR Lens",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+  "containerEnv": {
+    "LLM_DB_PASSWORD": "llm-readonly-local",
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": { "label": "CXR Lens", "onAutoForward": "openBrowser" },
+    "5432": { "label": "medical DB (llm_reader)", "onAutoForward": "silent" }
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["cxr-handson.md"]
+    },
+    "vscode": {
+      "extensions": ["GitHub.copilot-chat", "ms-python.python"],
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "chat.useAgentSkills": true
+      }
+    }
+  }
+}
