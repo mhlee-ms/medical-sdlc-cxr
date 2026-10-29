@@ -18,7 +18,7 @@ OUTPUT = ROOT / "site" / "index.html"
 
 def read_json(path):
     try:
-        return json.loads(path.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         print(f"skipping {path}: {error}", file=sys.stderr)
         return None
@@ -33,7 +33,7 @@ def inline_figure(analysis, directory):
         if not path.is_file():
             continue
         if path.suffix.lower() == ".svg":
-            analysis["figure"] = path.read_text()
+            analysis["figure"] = path.read_text(encoding="utf-8")
         else:
             data = base64.b64encode(path.read_bytes()).decode()
             mime = mimetypes.guess_type(path.name)[0] or "image/png"
@@ -49,6 +49,8 @@ def collect(root):
         analysis = read_json(path)
         if analysis and analysis.get("paper"):
             inline_figure(analysis, path.parent)
+            # The CXR Lens run IDs for this analysis's "cxr" requests are i<issue>-<name>.
+            analysis["issue"] = path.parent.name
             analyses[analysis["paper"]] = analysis
 
     days = []
@@ -75,7 +77,7 @@ def collect(root):
 def build():
     payload = json.dumps(collect(ROOT), ensure_ascii=False)
     # ponytail: </script> is the only sequence that can break out of the payload tag.
-    OUTPUT.write_text(TEMPLATE.read_text().replace("__PAYLOAD__", payload.replace("</", "<\\/")))
+    OUTPUT.write_text(TEMPLATE.read_text(encoding="utf-8").replace("__PAYLOAD__", payload.replace("</", "<\\/")), encoding="utf-8")
     return payload
 
 

@@ -4,7 +4,16 @@ name: CXR Lens
 # 결과를 서버 없는 웹앱으로 만들어 GitHub Pages 의 /cxr/ 에 배포한다.
 # 영상은 NIH ChestX-ray14 공개 영상, 병원 정보는 합성이다. DB 는 llm_reader 로 마스킹 뷰만 읽는다.
 # Pages 는 Settings → Pages → Source 가 GitHub Actions 여야 한다.
+#
+# 두 가지로 시작한다.
+# - Run workflow 버튼: 아래 옵션으로 기본 분석.
+# - 논문 딥다이브 결과(analysis/<이슈>/analysis.json)가 main 에 병합될 때: 기본 분석에 더해
+#   각 딥다이브가 "cxr.runs" 에 적은 조건(예: AP 만, PA 만)을 모두 다시 돌려 사이트에 함께 싣는다.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "analysis/*/analysis.json"
   workflow_dispatch:
     inputs:
       label:
@@ -95,10 +104,11 @@ jobs:
 
       - name: Analyze
         env:
-          LABEL: ${{ inputs.label }}
-          VIEW: ${{ inputs.view }}
-          TOP_K: ${{ inputs.top_k }}
-          COMPARE: ${{ inputs.compare }}
+          # push 로 시작하면 inputs 가 비어 있으므로 버튼의 기본값을 쓴다.
+          LABEL: ${{ inputs.label || '전체' }}
+          VIEW: ${{ inputs.view || '전체' }}
+          TOP_K: ${{ inputs.top_k || '3' }}
+          COMPARE: ${{ github.event_name == 'push' || inputs.compare }}
         run: |
           args=(--top-k "$TOP_K")
           [ "$LABEL" != "전체" ] && args+=(--label "$LABEL")
@@ -107,6 +117,11 @@ jobs:
           if [ "$COMPARE" = "true" ]; then
             python "$SKILL/cxr_harness.py" run --name padchest --weights densenet121-res224-pc "${args[@]}"
           fi
+
+      - name: Analyses requested by paper deep dives
+        env:
+          TOP_K: ${{ inputs.top_k || '3' }}
+        run: python "$SKILL/cxr_harness.py" requests --top-k "$TOP_K"
 
       - name: Job summary
         run: |

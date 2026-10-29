@@ -48,6 +48,10 @@ PY .github/skills/cxr-analysis/scripts/cxr_harness.py check
 
    전체 272장은 CPU에서 첫 실행 약 10분(폐·심장 분할 포함), 이후 분할 캐시(`runs/cxr/_anatomy/`)를
    재사용해 약 1.5분. 빠른 확인은 `--limit 12`. 웹 뷰어가 떠 있으면 새 런은 상단 런 목록에 자동으로 나타난다.
+
+   논문 딥다이브가 `analysis/<이슈>/analysis.json` 의 `cxr.runs` 로 요청한 조건은
+   `PY .github/skills/cxr-analysis/scripts/cxr_harness.py requests` 가 한 번에 돌린다(런 이름 `i<이슈>-<name>`).
+   Actions 에서는 그 결과가 병합될 때 CXR Lens 워크플로가 자동으로 실행한다.
 3. **산출물을 읽는다.** `runs/cxr/<이름>/` 아래:
 
    | 파일 | 내용 |

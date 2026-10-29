@@ -70,7 +70,11 @@ is to catch errors before a physician relies on them.
    sections, visuals that misrepresent the data, correlation stated as
    causation, hedges removed, and any patient-level value or masked identifier
    leaked into the repository. Check that every number in `analysis.json`
-   matches the prose in `README.md`.
+   matches the prose in `README.md`. The optional `cxr` object is the expected
+   way to hand image-model work (inference, Grad-CAM, AP/PA performance) to the
+   CXR Lens workflow after merge, not a scope change: check that its runs serve the
+   plan's question, use only the allowed values (`view` AP/PA/"", one NIH `label` or
+   "", `weights` all/pc, at most 3 runs), and that no result of those runs is claimed.
 6. Record your verdict in the `checks` array of `analysis/<n>/analysis.json`, one
    entry per gate, and push it to the pull request branch:
 

@@ -64,7 +64,14 @@ An approved probing plan landed on `main`. Run the deep dive it describes.
      "evidence": [{ "label": "규모", "value": "272건/153명" }],
      "figure": "",
      "note": "임상의가 병합 전에 확인해야 할 것",
-     "checks": []
+     "checks": [],
+     "cxr": {
+       "question": "CXR 재실행으로 확인할 질문 한 문장",
+       "runs": [
+         { "name": "ap", "view": "AP", "label": "", "weights": "all", "why": "이 조건을 보는 이유 한 줄" },
+         { "name": "pa", "view": "PA", "label": "", "weights": "all", "why": "비교 대상" }
+       ]
+     }
    }
    ```
 
@@ -81,6 +88,27 @@ An approved probing plan landed on `main`. Run the deep dive it describes.
      inlines that file. Omit the file rather than drawing a chart you cannot back
      with data.
    - Leave `checks` as an empty array. The verification workflow fills it.
+   - `cxr` turns your insight into a re-run of the repository's chest X-ray harness
+     (CXR Lens: a pretrained torchxrayvision DenseNet121 with Grad-CAM evidence maps,
+     lung/heart segmentation, cardiothoracic ratio, and cohort metrics with bootstrap
+     confidence intervals and subgroups). You cannot run it here and must not report
+     its results: after this pull request is merged, the `CXR Lens` workflow runs every
+     requested run on the same masked studies and links the results from the dashboard
+     card. Choose the runs that would test or illustrate your insight:
+     - 1 to 3 runs. With two or more, the first two are shown side by side, so put the
+       pair you want compared first (for example `view: "AP"` vs `view: "PA"`).
+     - `name`: lowercase letters, digits or `-`, at most 16 characters, unique per analysis.
+     - `view`: `"AP"`, `"PA"` or `""` (both). `label`: `""` (all studies) or exactly one of
+       Atelectasis, Cardiomegaly, Consolidation, Edema, Effusion, Emphysema, Fibrosis,
+       Hernia, Infiltration, Mass, Nodule, Pleural_Thickening, Pneumonia, Pneumothorax —
+       it keeps only studies carrying that label, so a label run has no negatives and
+       cannot estimate AUROC for that label.
+     - `weights`: `"all"` (trained on NIH and other public sets) or `"pc"` (PadChest only;
+       useful to probe whether the default model saw these public NIH images).
+     - `question` and `why` are Korean, one sentence each, written for the clinician.
+     - Omit `cxr` (or leave `runs` empty) when no run would help, and say why in the PR body.
+     - Before you write a run, query the subgroup size it would cover and mention it in
+       `why`; runs with fewer than about 30 studies give only descriptive results.
 5. Write `analysis/<issue-number>/README.md` for the physician reviewing this pull
    request: the same findings in prose, with the exact query behind every number,
    a clear separation between what the paper reports, what our data shows, and what
@@ -99,6 +127,9 @@ An approved probing plan landed on `main`. Run the deep dive it describes.
 ## Constraints
 
 - Never widen the scope beyond the approved plan; propose additions in the PR
-  body instead of doing them.
+  body instead of doing them. When the plan calls for running an image model
+  (inference, Grad-CAM, AP/PA performance), do the cohort-level part with
+  `query-medical-db` now and express the model part as `cxr` runs rather than
+  reporting it as a deviation.
 - Every claim about the paper needs its source link.
 - Do not overstate: a finding on this cohort is hypothesis-generating.

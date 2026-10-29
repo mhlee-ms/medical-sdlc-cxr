@@ -158,6 +158,9 @@
   .figure svg{display:block;margin-top:12px;max-width:100%;height:auto}
   .block{margin-top:30px;padding:20px 22px;border-radius:20px;border:1.5px solid var(--line2)}
   .block-t{font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--dim)}
+  .cxrgo{display:inline-block;padding:9px 16px;border-radius:12px;background:var(--accent);color:var(--on-accent);
+    font-weight:800;font-size:14px;text-decoration:none}
+  .check .cname a{color:inherit;font-weight:800}
   .check{display:flex;align-items:center;gap:11px;margin-top:8px}
   .cicon{flex:none;width:24px;height:24px;display:inline-flex;align-items:center;
     justify-content:center;border-radius:8px;font-size:13px;font-weight:800}
@@ -333,6 +336,34 @@
     if (a.figure) {
       h += '<div class="figure"><div class="block-t">산출물 — 승인된 제안대로 생성</div>' +
 a.figure + "</div>";
+    }
+
+    // 딥다이브가 analysis.json 의 cxr.runs 로 요청한 재실행. 병합되면 CXR Lens 워크플로가 만들어 /cxr/ 에 싣는다.
+    var cx = a.cxr || {}, cruns = (cx.runs || []).filter(function (r) {
+      // CXR Lens skips the same invalid requests (cxr_harness.py load_requests).
+      return /^[a-z0-9][a-z0-9-]{0,15}$/.test(String(r.name || "").toLowerCase()) &&
+        ["", "AP", "PA"].indexOf(r.view || "") >= 0 && ["", "all", "pc"].indexOf(r.weights || "") >= 0;
+    }).slice(0, 3);
+    if (cruns.length) {
+      var rid = function (r) { return "i" + a.issue + "-" + String(r.name || "").toLowerCase(); };
+      var cond = function (r) {
+        return [r.view ? "촬영 " + r.view : "", r.label ? "소견 " + r.label : "", r.weights === "pc" ? "PadChest 모델" : ""]
+          .filter(Boolean).join(" · ") || "전체";
+      };
+      var main = cruns.length >= 2
+        ? "cxr/#tab=compare&a=" + encodeURIComponent(rid(cruns[0])) + "&b=" + encodeURIComponent(rid(cruns[1]))
+        : "cxr/#run=" + encodeURIComponent(rid(cruns[0]));
+      h += '<div class="block"><div class="block-t">우리 데이터로 다시 돌려 보기 — CXR Lens</div>' +
+        (cx.question ? '<div class="body" style="font-size:16px;font-weight:700;margin-top:8px">' + esc(cx.question) + "</div>" : "") +
+        cruns.map(function (r) {
+          return '<div class="check"><span class="cicon ok">▶</span><span class="cname">' +
+            '<a href="cxr/#run=' + encodeURIComponent(rid(r)) + '">' + esc(r.name) + "</a> — " + esc(cond(r)) +
+            (r.why ? ' <span style="color:var(--dim);font-weight:500">· ' + esc(r.why) + "</span>" : "") + "</span></div>";
+        }).join("") +
+        '<div style="margin-top:12px"><a class="cxrgo" href="' + main + '">' +
+          (cruns.length >= 2 ? "두 조건 나란히 비교하기 →" : "결과 열기 →") + "</a></div>" +
+        '<div style="margin-top:8px;font-size:12.5px;color:var(--dim)">병합 후 CXR Lens 워크플로가 몇 분 안에 이 결과를 만듭니다. 그 전에는 링크가 비어 있을 수 있습니다.</div>' +
+        "</div>";
     }
 
     h += '<div class="block"><div class="block-t">검증 결과</div>' +

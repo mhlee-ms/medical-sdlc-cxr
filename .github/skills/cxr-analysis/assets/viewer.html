@@ -255,7 +255,7 @@ table.cl .ok{color:var(--green)}.cl .part{color:var(--amber)}.cl .no{color:var(-
   <section class="tab dash" id="t-compare">
     <div class="panel">
       <div class="row" style="justify-content:space-between">
-        <div><h2>모델 비교 — 같은 영상, 다른 가중치</h2><div class="sub">NIH 영상을 학습에 쓰지 않은 가중치(densenet121-res224-pc)와 비교하면 데이터 누출의 크기를 가늠할 수 있습니다.</div></div>
+        <div><h2 id="cmpTitle">모델 비교 — 같은 영상, 다른 가중치</h2><div class="sub" id="cmpSub">NIH 영상을 학습에 쓰지 않은 가중치(densenet121-res224-pc)와 비교하면 데이터 누출의 크기를 가늠할 수 있습니다.</div></div>
         <div class="row"><select id="runA"></select><span class="note">vs</span><select id="runB"></select></div>
       </div>
       <div id="cmp"></div>
@@ -277,6 +277,9 @@ const STATUS = [["all","전체"],["FN","놓침"],["FP","과잉"],["TP","적중"]
 const STATUS_KO = {TP:"적중",FN:"놓침",FP:"과잉",TN:"정상",NA:"업로드"};
 const top1Region = r => (r.regions || {})[r.top[0]] || {};
 const isSC = r => !!top1Region(r).shortcut;
+const shortWeights = w => w.replace("densenet121-res224-", "");
+// Runs requested by a paper deep dive carry issue/short/filters, e.g. "#2 ap · view=AP".
+const runLabel = r => r.issue ? `#${r.issue} ${r.short} · ${r.filters || "전체"} · ${shortWeights(r.weights)}` : `${r.run_id} · ${shortWeights(r.weights)}`;
 
 async function api(path, opt) {
   const r = await fetch(path, opt);
@@ -329,7 +332,7 @@ async function refreshRuns() {
   const runs = await src.runs().catch(() => null);
   if (!runs || runs.map(r => r.run_id).join() === S.runs.map(r => r.run_id).join()) return;
   S.runs = runs;
-  const opts = runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
+  const opts = runs.map(r => `<option value="${esc(r.run_id)}">${esc(runLabel(r))}</option>`).join("");
   for (const id of ["#run", "#runA", "#runB"]) { const v = $(id).value; $(id).innerHTML = opts; if (runs.some(r => r.run_id === v)) $(id).value = v; }
 }
 
@@ -340,7 +343,7 @@ async function boot() {
   }
   S.ko = (await src.meta()).ko;
   S.runs = await src.runs();
-  const opts = S.runs.map(r => `<option value="${esc(r.run_id)}">${esc(r.run_id)} · ${esc(r.weights.replace("densenet121-res224-", ""))}</option>`).join("");
+  const opts = S.runs.map(r => `<option value="${esc(r.run_id)}">${esc(runLabel(r))}</option>`).join("");
   const pref = S.runs.find(r => r.run_id === "baseline") || S.runs[0];
   const other = S.runs.find(r => r.run_id !== pref.run_id) || pref;
   $("#run").innerHTML = $("#runA").innerHTML = $("#runB").innerHTML = opts;
@@ -738,8 +741,17 @@ async function renderCompare() {
   const anat = sa && sb ? `<div class="grid kpis" style="margin-top:14px">
       <div class="kpi"><div class="k">흉강 밖 근거 (지름길 의심) · ${esc(a)}</div><div class="v">${sa.top1_shortcut}/${sa.top1_n} <small>근거 중앙값 흉강 안 ${sa.top1_median_in_thorax_pct.toFixed(0)}%</small></div></div>
       <div class="kpi"><div class="k">흉강 밖 근거 (지름길 의심) · ${esc(b)}</div><div class="v">${sb.top1_shortcut}/${sb.top1_n} <small>근거 중앙값 흉강 안 ${sb.top1_median_in_thorax_pct.toFixed(0)}%</small></div></div></div>` : "";
-  $("#cmp").innerHTML = `<div class="legend" style="margin-bottom:10px"><span><i style="background:#2dd4bf;border-radius:50%"></i>${esc(a)} · ${esc(A.run.weights)}</span><span><i style="background:#f5a524;border-radius:50%"></i>${esc(b)} · ${esc(B.run.weights)}</span><span>  ⚠ 표본 부족</span></div>${g}${anat}
-      <div class="note" style="margin-top:12px">크게 떨어지는 소견은 기준 성능이 학습 데이터 중복으로 부풀었을 가능성이 있습니다. 다만 학습 데이터 분포 차이(스페인 PadChest vs 미국 NIH)도 함께 작용하므로 둘을 분리할 수는 없습니다. 성능이 높은 쪽의 근거가 흉강 밖에 더 많다면, 높은 성능의 일부가 지름길에서 왔을 가능성을 의심해 볼 수 있습니다(인과 증명은 아님).</div>`;
+  const question = A.run.issue && A.run.issue === B.run.issue && A.run.question
+    ? `<div class="kpi" style="margin-bottom:12px"><div class="k">논문 분석 #${esc(A.run.issue)} 이 던진 질문</div><div class="v" style="font-size:17px">${esc(A.run.question)}</div>
+       <div class="note" style="margin-top:6px">${esc(A.run.short)}: ${esc(A.run.why || A.run.filters)} · ${A.run.n_studies}장 &nbsp;|&nbsp; ${esc(B.run.short)}: ${esc(B.run.why || B.run.filters)} · ${B.run.n_studies}장</div></div>` : "";
+  $("#cmp").innerHTML = `${question}<div class="legend" style="margin-bottom:10px"><span><i style="background:#2dd4bf;border-radius:50%"></i>${esc(runLabel(A.run))}</span><span><i style="background:#f5a524;border-radius:50%"></i>${esc(runLabel(B.run))}</span><span>  ⚠ 표본 부족</span></div>${g}${anat}
+      <div class="note" style="margin-top:12px">${A.run.weights === B.run.weights
+        ? "같은 모델을 서로 다른 영상 묶음에 적용한 결과입니다. 두 묶음은 환자 구성과 유병률이 달라서, 차이가 조건(예: 촬영 자세) 때문인지 환자 차이 때문인지는 분리되지 않습니다. 양성 수가 적은 소견(⚠)은 신뢰구간이 넓어 결론으로 쓰지 마세요."
+        : "크게 떨어지는 소견은 기준 성능이 학습 데이터 중복으로 부풀었을 가능성이 있습니다. 다만 학습 데이터 분포 차이(스페인 PadChest vs 미국 NIH)도 함께 작용하므로 둘을 분리할 수는 없습니다. 성능이 높은 쪽의 근거가 흉강 밖에 더 많다면, 높은 성능의 일부가 지름길에서 왔을 가능성을 의심해 볼 수 있습니다(인과 증명은 아님)."}</div>`;
+  const same = A.run.weights === B.run.weights;
+  $("#cmpTitle").textContent = same ? "조건 비교 — 같은 모델, 다른 영상 묶음" : "모델 비교 — 같은 영상, 다른 가중치";
+  $("#cmpSub").textContent = same ? `${A.run.filters || "전체"} (${A.run.n_studies}장) vs ${B.run.filters || "전체"} (${B.run.n_studies}장)`
+    : "NIH 영상을 학습에 쓰지 않은 가중치(densenet121-res224-pc)와 비교하면 데이터 누출의 크기를 가늠할 수 있습니다.";
 }
 
 /* ------------------------------------------------------------ upload */
@@ -774,6 +786,9 @@ async function applyHash() {
   if (h.has("view")) $("#viewF").value = h.get("view");
   if (h.has("label")) $("#labelF").value = h.get("label");
   if (h.get("basis")) setBasis(h.get("basis")); else { renderThresh(); renderList(); }
+  // #tab=compare&a=i2-ap&b=i2-pa — opened from a paper card on the dashboard.
+  const ids = S.runs.map(r => r.run_id);
+  if (ids.includes(h.get("a")) && ids.includes(h.get("b"))) { $("#runA").value = h.get("a"); $("#runB").value = h.get("b"); renderCompare(); }
   showTab(h.get("tab") || "viewer");
   const c = h.get("case"), pick = parseInt(h.get("pick"), 10);
   let rec = null;

@@ -26,6 +26,8 @@ flowchart TD
     G --> H["Independent verification<br/>다른 모델(gpt-5)"]
     H --> I["출처 · 수치 · 이전 에이전트 3중 검증<br/>request_changes 또는 approve"]
     I -->|의사가 머지| J["GitHub Pages 대시보드"]
+    I -->|의사가 머지| K["CXR Lens 재실행<br/>딥다이브가 정한 조건(예: AP vs PA)"]
+    K --> L["Pages /cxr/<br/>논문 카드에서 링크"]
 ```
 
 | 단계 | 워크플로 | 트리거 | 산출물 |
@@ -34,6 +36,11 @@ flowchart TD
 | 2. probing | `paper-probing.md` | 이슈 등록 | PR 본문 리포트 + `analysis/{issue}/plan.md` |
 | 3. 딥다이브 | `paper-deep-dive.md` | probing PR 머지 | `analysis/{issue}/` |
 | 4. 검증 | `analysis-verification.md` | 3단계 완료 · 수동 | `checks` 기록 + PR 리뷰 |
+| 5. CXR 재실행 | `cxr-lens.yml` | 딥다이브 결과 병합 · 수동 | Pages `/cxr/` + 논문 카드 링크 |
+
+딥다이브는 인사이트를 확인할 흉부 X선 재분석 조건을 `analysis.json` 의 `cxr.runs` 에 적습니다(최대 3개,
+예: AP 만 vs PA 만). 이 결과가 병합되면 CXR Lens 워크플로가 같은 마스킹 영상에 그 조건대로 모델을 다시 돌려
+`/cxr/` 에 싣고, 대시보드의 논문 카드에 "두 조건 나란히 비교하기" 링크가 생깁니다.
 
 수집만 자동 병합되고, 나머지 단계는 PR을 만들 뿐 스스로 머지하지 않습니다. 머지가 곧 의사의 승인입니다.
 

@@ -17,6 +17,7 @@ import io
 import json
 import os
 import platform
+import re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -661,6 +662,8 @@ def cmd_run(args) -> int:
         "anatomy": anatomy is not None,
         "source": "llm.hospital (masked view, role llm_reader)",
         "created_at": datetime.now().isoformat(timespec="seconds"),
+        # Set when the run was requested by a paper deep dive (see cmd_requests).
+        **(getattr(args, "meta", None) or {}),
     }
 
     with open(out / "predictions.csv", "w", newline="", encoding="utf-8") as f:
@@ -683,6 +686,59 @@ def cmd_run(args) -> int:
     return 0
 
 
+# ------------------------------------------------------------------- deep-dive requests
+
+REQUEST_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,15}$")
+REQUEST_WEIGHTS = {"all": "densenet121-res224-all", "pc": "densenet121-res224-pc"}
+MAX_REQUEST_RUNS = 3
+
+
+def load_requests(root: Path) -> tuple[list[dict], list[str]]:
+    """CXR runs that paper deep dives asked for in analysis/<issue>/analysis.json under "cxr"."""
+    requests, problems = [], []
+    for path in sorted(root.glob("*/analysis.json")):
+        issue = path.parent.name
+        try:
+            analysis = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            problems.append(f"{path}: {e}")
+            continue
+        cxr = analysis.get("cxr") or {}
+        for spec in (cxr.get("runs") or [])[:MAX_REQUEST_RUNS]:
+            name = str(spec.get("name", "")).strip().lower()
+            view = spec.get("view") or None
+            label = spec.get("label") or None
+            weights = spec.get("weights") or "all"
+            bad = [k for k, ok in (("name", REQUEST_NAME.match(name)), ("view", view in (None, "AP", "PA")),
+                                   ("label", label in (None, *NIH_LABELS)), ("weights", weights in REQUEST_WEIGHTS))
+                   if not ok]
+            if bad:
+                problems.append(f"{path}: run {spec} has invalid {', '.join(bad)} — skipped")
+                continue
+            requests.append({
+                "name": f"i{issue}-{name}", "view": view, "label": label, "weights": REQUEST_WEIGHTS[weights],
+                "meta": {"issue": issue, "paper": analysis.get("paper", ""), "short": name,
+                         "question": cxr.get("question", ""), "why": spec.get("why", "")},
+            })
+    return requests, problems
+
+
+def cmd_requests(args) -> int:
+    requests, problems = load_requests(Path(args.root))
+    for p in problems:
+        print(f"warning: {p}")
+    if not requests:
+        print(f"no CXR requests in {args.root}/*/analysis.json")
+        return 0
+    print(f"{len(requests)} requested runs: {', '.join(r['name'] for r in requests)}")
+    for r in requests:
+        run_args = argparse.Namespace(name=r["name"], view=r["view"], label=r["label"], limit=None, top_k=args.top_k,
+                                      weights=r["weights"], out=args.out, no_anatomy=args.no_anatomy, meta=r["meta"])
+        if cmd_run(run_args):
+            print(f"warning: {r['name']} matched no studies — skipped")
+    return 0
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -697,8 +753,13 @@ def main() -> int:
                    help="skip lung/heart segmentation (anatomy check and cardiothoracic ratio)")
     r.add_argument("--out", default=str(REPO_ROOT / "runs" / "cxr"), help="output root (default runs/cxr)")
     r.add_argument("--name", help="run directory name (default timestamp)")
+    q = sub.add_parser("requests", help="run the CXR analyses requested by paper deep dives (analysis/*/analysis.json)")
+    q.add_argument("--root", default=str(REPO_ROOT / "analysis"), help="analysis directory (default analysis/)")
+    q.add_argument("--top-k", type=int, default=3)
+    q.add_argument("--no-anatomy", action="store_true")
+    q.add_argument("--out", default=str(REPO_ROOT / "runs" / "cxr"))
     args = p.parse_args()
-    return cmd_check(args) if args.cmd == "check" else cmd_run(args)
+    return {"check": cmd_check, "run": cmd_run, "requests": cmd_requests}[args.cmd](args)
 
 
 if __name__ == "__main__":
