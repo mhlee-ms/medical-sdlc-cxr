@@ -1,0 +1,26 @@
+{
+  "id": "lvef-cxr-screening",
+  "title": "Interpretable Deep Learning for Opportunistic Screening of Left Ventricular Dysfunction Screening Using Chest Radiographs",
+  "authors": [
+    "Sowon Jang",
+    "Dong Hyun Lee",
+    "Hye Soo Cho",
+    "Sun‐ju Byeon",
+    "Bo Yun Hur",
+    "Chang Min Park",
+    "Minyoung Chung",
+    "Ju Gang Nam"
+  ],
+  "venue": "Radiology: Artificial Intelligence",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1148/ryai.260161",
+  "abstract": "Purpose To develop and evaluate a deep learning model (DLLV) for identifying reduced left ventricular ejection fraction (LVEF) on chest radiographs (CXRs) and assess its potential as a prescreening tool for selective transthoracic echocardiography (TTE) in health checkup populations. Materials and Methods Same-day CXR-TTE pairs obtained between January 2016 and September 2021 were retrospectively collected for model development. Counterfactual learning was applied to enhance model performance and interpretability. External testing included one tertiary referral center cohort and two health checkup cohorts. Discrimination was evaluated using area under the receiver operating characteristic curve (AUC) and area under the precision-recall curve (AUPRC), and DLLV-based prescreening was evaluated by estimated TTE reduction and missed-case burden. Results The development dataset included 24,674 patients (32,135 CXR-TTE pairs); external cohorts included 5440, 28,034, and 6085 patients (53–62% male). DLLV achieved an AUC of 0.86 (95% CI: 0.84, 0.88) for LVEF ≤ 40% in the tertiary referral cohort. In health checkup cohorts, AUCs were 0.92–0.97 for LVEF ≤ 40%, with AUPRCs of 0.04 in both cohorts, corresponding to 87-fold (95% CI: 16, 404) and 37-fold (95% CI: 3, 251) enrichment over baseline prevalence. Counterfactual reinforcement learning produced heatmaps with greater heart localization precision ( P < .001 for all) and higher AUC for LVEF < 50% ( P = .04). DLLV-based prescreening estimated TTE volume reductions up to 85% while identifying all 12 and 7 individuals with LVEF ≤ 40%. Conclusion DLLV identified reduced LVEF on CXRs across external test cohorts and showed potential as a prescreening tool for selective TTE in health checkup populations. ©RSNA, 2026",
+  "axes": [
+    "외부 검증·임상 판독"
+  ],
+  "takeaway": "흉부 X선으로 LVEF ≤ 40%를 가려내는 딥러닝 모델이 3개 외부 코호트에서 AUC 0.86–0.97을 보였고, 선별 심초음파 검사량을 최대 85%까지 줄일 수 있다고 보고한다.",
+  "relevance": "우리 코호트 272건 중 심비대 라벨이 10건(약 4%)으로, 심장 관련 소견을 흉부 X선에서 읽어내는 과제와 맞닿습니다. 5개 기관과 AP/PA가 섞여 있어 기관·촬영 자세에 따른 일반화를 논의할 근거가 됩니다. 또한 이 논문의 반사실 학습 히트맵은 우리가 쓰는 Grad-CAM의 심장 위치 표시와 비교해 볼 수 있습니다.",
+  "caveat": "우리 데이터에는 심초음파 LVEF 기준 표준이 없어 좌심실 기능 저하 예측 성능은 확인할 수 없고, 심비대 라벨 10건은 통계적 평가에 너무 적습니다.",
+  "check": "우리 모델의 심비대 Grad-CAM이 심장 영역에 얼마나 집중되며, 이를 논문의 히트맵 국소화 정밀도 방식으로 정량화할 수 있는가?"
+}
