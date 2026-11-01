@@ -1,0 +1,28 @@
+{
+  "id": "cxr-opportunistic-osteoporosis",
+  "title": "Artificial intelligence for opportunistic osteoporosis screening on chest radiographs",
+  "authors": [
+    "Youngjune Kim",
+    "Dong Hyun Lee",
+    "Sun-ju Byeon",
+    "Hye Soo Cho",
+    "Seungkwan Jo",
+    "Chang Min Park",
+    "Joon Woo Lee",
+    "Minyoung Chung",
+    "Ju Gang Nam"
+  ],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03333-7",
+  "abstract": "We developed an artificial intelligence model (AI-OsRM) to predict osteoporosis and reduced bone mineral density (BMD) from chest radiographs (CXR) and evaluated its performance and clinical utility across three external cohorts. AI-OsRM was developed using 46,478 paired CXR and dual-energy X-ray absorptiometry (DXA) examinations from 26,757 patients collected at a tertiary referral hospital between 2016 and 2022, using a ResNet-based architecture with masked autoencoder pretraining. External validation was performed in three independent cohorts, including a temporally separated hospital cohort (SNUH; n = 6391) and two large health checkup cohorts (HPC, n = 24,132; YSMC, n = 122,535). In the SNUH cohort, AI-OsRM achieved an area under the receiver operating characteristic curve (AUROC) of 0.88 (95% CI: 0.87–0.89) for both osteoporosis and reduced BMD. In the health checkup cohorts, AUROCs for osteoporosis detection were 0.93 (95% CI: 0.92–0.93) in HPC and 0.92 (95% CI: 0.92–0.92) in YSMC. Simulation analyses demonstrated that AI-OsRM–based prescreening could reduce DXA utilization by approximately 50% while maintaining detection of 98-99% of osteoporosis cases and 80–90% of reduced BMD cases. These findings suggest that AI-OsRM can enable accurate identification of individuals with osteoporosis or reduced BMD and may serve as an effective prescreening tool to optimize DXA utilization.",
+  "axes": [
+    "기회적 선별",
+    "전향·외부 검증 수준"
+  ],
+  "takeaway": "흉부 X선만으로 골다공증을 예측하는 AI-OsRM이 외부 코호트 3곳에서 AUROC 0.88~0.93을 보였고, DXA 사용을 약 50% 줄일 수 있다고 시뮬레이션했다.",
+  "relevance": "우리 코호트는 연령 9~87세, 평균 약 51.5세이며 65세 이상이 57건, 50세 이상이 162건으로 골다공증 선별 대상 연령이 상당수 포함됩니다. 기관 5곳(48~62건씩)에 걸쳐 있어 기관 간 일반화를 가늠해 볼 수 있는 구조이기도 합니다.",
+  "caveat": "우리 데이터에는 DXA·골밀도 라벨이 없어 모델 성능을 검증할 수 없고, 해당 모델은 폐 소견이 아닌 골밀도 예측용입니다.",
+  "check": "우리 코호트의 50~65세 이상 여성군에서 이 접근을 적용하려면 어떤 골밀도 기준 라벨을 추가로 확보해야 하는가?"
+}
