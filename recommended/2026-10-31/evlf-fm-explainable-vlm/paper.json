@@ -1,0 +1,31 @@
+{
+  "id": "evlf-fm-explainable-vlm",
+  "title": "A clinical multimodal vision language foundation model with fine-grain explainability",
+  "authors": [
+    "Yang Bai",
+    "Haoran Cheng",
+    "Yang Zhou",
+    "Jun Zhou",
+    "Arun James Thirunavukarasu",
+    "Yuhe Ke",
+    "Jie Yao",
+    "Kanae Fukutsu",
+    "Chrystie Wan Ning Quek",
+    "Ashley Shuen Ying Hong",
+    "Laura Gutiérrez",
+    "Alessandro Berni"
+  ],
+  "venue": "Nature Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41591-026-04655-5",
+  "abstract": "Despite their considerable promise, many current medical foundation models remain modality specific and lack transparent reasoning, limiting clinical adoption. To address this gap, we introduce Explainable Vision Language Foundation Model for Medicine (EVLF-FM), a multimodal vision language foundation model that combines broad diagnostic capabilities with fine-grained explainability. The development and testing of EVLF-FM encompassed more than 1.3 million total samples from 18 global datasets across 10 imaging modalities related to six clinical specialties: dermatology, hepatology, ophthalmology, pathology, pulmonology and radiology. External validation employed 13,443 independent test samples from 17 additional datasets across 10 imaging modalities. EVLF-FM supports disease diagnosis, visual question answering and pixel-level visual grounding with reasoning capabilities. In internal validation for disease diagnostics, EVLF-FM achieved the highest average accuracy, 0.895, outperforming leading generalist and specialist models. In medical visual grounding, EVLF-FM also achieved reasonable performance across nine modalities with average accuracy at 0.5 intersection over union (Acc@0.5) of 0.842. External testing further confirmed consistent zero-shot and few-shot performance, with competitive F1 scores despite a smaller model size. A hybrid training strategy combining supervised and visual reinforcement fine-tuning enables EVLF-FM to generate clinically interpretable explanations aligned with visual evidence. Human evaluation of these reasoning outputs using the S.C.O.R.E. framework yielded a high overall mean score of 4.25/5, supporting their clinical interpretability. Current limitations include the need for additional validation across diverse healthcare settings. Prospective clinical studies are required to evaluate the safety, effectiveness and clinical utility of EVLF-FM before routine clinical deployment.",
+  "axes": [
+    "설명가능성·병변 위치 근거",
+    "전향·외부 검증 수준"
+  ],
+  "takeaway": "EVLF-FM은 17개 외부 데이터셋에서 제로샷·퓨샷 성능을 유지하고, 진단과 함께 픽셀 단위 근거(visual grounding)를 제시한다고 보고한다.",
+  "relevance": "우리 코호트는 272건(환자 153명)으로 정상 145건, 다중 소견 50건이며 결절 12건, 흉수 33건처럼 소견별 표본이 작습니다. 현재 Grad-CAM 히트맵 기반 병변 표시를 더 근거 있는 위치 설명으로 비교 평가할 후보입니다.",
+  "caveat": "우리 데이터에는 픽셀 단위 병변 주석이 없어 grounding 정확도(Acc@0.5)를 직접 재현할 수 없고, 저자들도 전향적 임상 연구가 필요하다고 밝힙니다.",
+  "check": "우리 코호트의 결절·흉수 영상에서 이 모델의 근거 영역이 Grad-CAM보다 판독 소견과 더 잘 일치하는지 소규모로 확인해 볼 수 있을까?"
+}

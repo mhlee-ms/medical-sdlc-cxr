@@ -1,0 +1,21 @@
+{
+  "id": "human-oversight-erroneous-ai-meta",
+  "title": "Human oversight of erroneous clinical AI and decision support a systematic review and meta analysis",
+  "authors": [
+    "Di Zeng",
+    "Jianyong Lei",
+    "Zhihui Li"
+  ],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03408-5",
+  "abstract": "Artificial intelligence (AI) increasingly supports clinical decisions, but human oversight is protective only if clinicians recognize and resist erroneous output. We systematically reviewed controlled and real-world studies of clinician responses to incorrect automated advice. Forty-six reports represented 41 independent cohort clusters, including 40 core cohorts. Across three adjusted cohorts, clinician correctness was substantially higher with correct than incorrect automated advice (pooled OR 10.19, 95% CI 7.43–13.98; I² = 0%); a ≥ 2020 sensitivity analysis was similar but imprecise (OR 9.22, 95% CI 2.06–41.13). In four heterogeneous real-world computerized ECG studies, 26.6% of erroneous interpretations were not corrected or recognized (95% CI 6.4–65.6%; I² = 95.8%). Contemporary AI and large language model studies also documented harmful reliance but were too heterogeneous for pooling. Patient-level adverse events were reported in one retrospective cohort. Human oversight should be evaluated as an error-interception capability rather than assumed to ensure safety.",
+  "axes": [
+    "AI 보조와 판독자 행동"
+  ],
+  "takeaway": "임상의는 틀린 자동화 조언보다 맞는 조언에서 훨씬 정확했고(통합 OR 10.19), 인간 감독을 안전장치로 가정해서는 안 된다고 주장한다.",
+  "relevance": "우리 코호트에서 정상이 145건이고 소견 있는 영상이 127건으로, 모델 오류(위음성·위양성)가 판독자에게 노출될 영상이 모두 포함되어 있습니다. 오류 사례를 따로 모아 판독자 시연에서 감독 능력을 점검하는 근거가 됩니다.",
+  "caveat": "메타분석 대상 대부분이 심전도 등 흉부 X선 외 영역이며, 우리 데이터로는 판독자의 오류 수용 비율을 측정할 수 없습니다.",
+  "check": "CXR Lens 시연에서 의도적으로 틀린 모델 출력을 보여 주었을 때 의사가 얼마나 교정하는지 확인해 볼 수 있을까?"
+}

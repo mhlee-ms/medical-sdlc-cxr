@@ -1,0 +1,28 @@
+{
+  "id": "radiographer-fracture-ai-prospective",
+  "title": "Radiographer fracture detection with and without AI assistance in prospective emergency department use",
+  "authors": [
+    "Jin Rong Tan",
+    "Anh Nguyen Tuan Tran",
+    "Wei Yow Sim",
+    "Jia Rong Jonathan Mok",
+    "Felicia Hui Min Thng",
+    "Jason Hong Seng Toh",
+    "May San Mak",
+    "Siew Kune Wong",
+    "Meng Ai Png"
+  ],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03313-x",
+  "abstract": "Artificial intelligence (AI) systems for fracture detection perform strongly in controlled settings, but prospective real-world evidence is limited. In a three-month deployment in one emergency department, thirteen radiographers in a radiographer-led screening programme independently interpreted 2496 consecutive musculoskeletal examinations (one radiographer per examination), reviewed output from a commercial deep-learning system, then recorded a final decision, giving 2496 paired reads against a radiologist reference standard. Standalone AI sensitivity was 75.6%, falling to 46.2% for subtle fractures, below the radiographers’ baseline sensitivity of 91.6%. Radiographers’ baseline accuracy was high (97.6%; specificity 99.0%) and improved modestly with AI assistance (98.0%; exact McNemar p = 0.0064). With AI assistance, radiographers corrected 11 errors and introduced 1, a net gain of 10 cases. Subgroup gains were directionally consistent but not significant after correction. Radiographers changed their decision in only 11 of 729 discordant cases, and most negative interactions were correct AI recommendations not adopted. No or incomplete AI output was returned for 8.8% of acquired examinations. AI assistance delivered a small, selective benefit arising from complementary rather than superior algorithmic performance. Operational reliability proved as consequential as diagnostic accuracy, and behavioural inferences rest on few events. Downstream clinical outcomes were not measured.",
+  "axes": [
+    "AI 보조와 판독자 행동",
+    "전향·외부 검증 수준"
+  ],
+  "takeaway": "전향적 응급실 배치에서 AI 보조는 판독자 정확도를 97.6%에서 98.0%로 소폭 올렸고, 이득은 AI가 더 우수해서가 아니라 상호 보완성에서 나왔다.",
+  "relevance": "우리 코호트는 AP 88건, PA 184건이고 보고서 상태가 preliminary·amended·addendum 등으로 섞여 있어 판독이 바뀌는 실제 흐름과 맞닿습니다. 모델 단독 성능과 판독자 보조 효과를 분리해 평가하는 설계가 우리 CXR 데모 평가에도 참고가 됩니다.",
+  "caveat": "근골격계 골절 검출 연구로 흉부 X선 소견에 직접 적용되지 않으며, 우리 데이터에는 AI 보조 전후의 판독자 결정 기록이 없습니다.",
+  "check": "우리 모델이 미세한 결절을 놓치는 경우에도 판독자가 보완해 줄 수 있는지, 모델 단독 민감도와 보조 후 민감도를 비교할 수 있을까?"
+}
