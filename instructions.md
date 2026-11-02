@@ -37,7 +37,7 @@ AI에게 "이 논문 분석해 줘"라고 한 번 물어보는 것과, 아래처
 
 ### 1. 내 저장소 만들기
 
-**https://github.com/hy2219/medical-sdlc** 로 들어가서 초록색 **Use this template** →
+**https://github.com/mhlee-ms/medical-sdlc-cxr-template** 로 들어가서 초록색 **Use this template** →
 **Create a new repository** 를 누릅니다.
 
 - Repository name: 아무 이름 (예: `demo`)
@@ -55,7 +55,10 @@ AI에게 "이 논문 분석해 줘"라고 한 번 물어보는 것과, 아래처
 
 > 이걸 빠뜨리면 AI가 일은 다 해놓고 결과를 올리지 못합니다. 가장 흔한 실수입니다.
 
-### 3. 데이터베이스 비밀번호 등록
+### 3. (선택) 데이터베이스 비밀번호 등록
+
+등록하지 않으면 기본값으로 동작합니다. DB 는 실행할 때마다 Actions 안에서 새로 만들어졌다가
+사라지는 임시 컨테이너라 기본값으로도 외부에 노출되지 않습니다. 바꾸고 싶을 때만:
 
 **Settings** → 왼쪽 **Secrets and variables** → **Actions** →
 **New repository secret**
@@ -72,7 +75,7 @@ AI에게 "이 논문 분석해 줘"라고 한 번 물어보는 것과, 아래처
 
 위쪽 **Actions** 탭을 누릅니다.
 "I understand my workflows, go ahead and enable them" 버튼이 보이면 눌러 주세요.
-워크플로 6개가 보이면 됩니다.
+워크플로 9개가 보이면 됩니다. 먼저 **Setup check** → **Run workflow** 를 눌러 결과 요약이 모두 ✅ 인지 확인하세요.
 
 이어서 왼쪽 목록에서 **Build dashboard** → 오른쪽 **Run workflow** 를 한 번 누릅니다.
 20초쯤 뒤 **Settings → Pages** 맨 위의 주소를 열면 이렇게 나옵니다.

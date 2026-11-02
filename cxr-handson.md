@@ -96,7 +96,7 @@ Actions → **CXR Lens** → **Run workflow** 에서 옵션을 바꿉니다. 예
 ## 더 해 보고 싶다면 (선택)
 
 - **같은 웹앱을 내 컴퓨터나 Codespaces에서 실시간으로**: 모든 소견의 히트맵, 내 영상 올리기, Copilot에게
-  말로 분석 시키기가 됩니다. [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mhlee-ms/medical-sdlc-cxr?quickstart=1)
+  말로 분석 시키기가 됩니다. 내 저장소에서 **Code → Codespaces → Create codespace on main**
   — 열리면 터미널에서 `.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_harness.py run --name baseline` 후
   `.venv/bin/python .github/skills/cxr-analysis/scripts/cxr_web.py`.
 - 분석 방법, 해석, 검증 원칙: [.github/skills/cxr-analysis/SKILL.md](.github/skills/cxr-analysis/SKILL.md)

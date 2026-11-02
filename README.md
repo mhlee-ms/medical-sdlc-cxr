@@ -98,15 +98,17 @@ LLM은 `llm_reader` 역할로 `llm.hospital` 뷰만 읽습니다. 이름과 주�
 
 ## 시작하기
 
-실습으로 처음 돌려보신다면 [instructions.md](instructions.md)를 따라가세요.
+고객사·새 조직에 배포한다면 **[SETUP.md](SETUP.md)** 의 체크리스트를 따라가세요(사전 조건, 설정, 첫 실행
+순서, 비용, 알려진 제약). 실습으로 처음 돌려보신다면 [instructions.md](instructions.md)를 따라가세요.
 
 이 저장소를 템플릿으로 새 저장소를 만든 뒤:
 
 1. Settings → Actions → General → **Allow GitHub Actions to create and approve
    pull requests** 활성화
-2. Secret `LLM_DB_PASSWORD` 등록
+2. Settings → Pages → Source를 **GitHub Actions** 로 지정
+3. Actions → **Setup check** 실행 (DB·Pages 설정 자동 점검)
 
-3. Settings → Pages → Source를 **GitHub Actions** 로 지정
+Secret `LLM_DB_PASSWORD` 는 선택입니다(없으면 기본값). 매일 자동 수집은 꺼져 있으며, 켜는 방법은 SETUP.md 에 있습니다.
 
 대시보드는 병합될 때마다 다시 만들어져 `https://<사용자>.github.io/<저장소>/` 로
 배포됩니다. Pages는 public 저장소이거나 유료 플랜의 private 저장소여야 동작합니다.
@@ -141,7 +143,7 @@ open site/index.html                       # 서버 없이 그대로 열립니�
 
 Pages 는 공개 웹입니다. 올라가는 영상은 NIH 공개 영상이고 병원 정보는 합성이며, 식별자는 마스킹 해시입니다.
 
-같은 웹앱을 실시간 서버로 띄우면(로컬 또는 [Codespaces](https://codespaces.new/mhlee-ms/medical-sdlc-cxr?quickstart=1))
+같은 웹앱을 실시간 서버로 띄우면(로컬 또는 저장소의 **Code → Codespaces**)
 모든 소견의 히트맵, 영상 업로드, Copilot 채팅의 `/cxr-analysis` 스킬까지 쓸 수 있습니다.
 
 ```bash

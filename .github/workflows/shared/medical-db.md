@@ -10,19 +10,26 @@ network:
     - export.arxiv.org
     - doi.org
     # DOI 는 출판사 페이지로 넘어간다. 검증이 원문을 확인할 수 있게 연다.
+    # 수집 대상 15개 매체의 출판사와, 서지 정보를 기계적으로 확인할 Crossref.
     - www.nature.com
+    - link.springer.com
+    - pubs.rsna.org
+    - www.thelancet.com
+    - www.sciencedirect.com
+    - arxiv.org
+    - api.crossref.org
 tools:
   cli-proxy: true
 services:
   postgres:
     # 이미지가 public 이라 자격증명 없이 익명으로 받는다. 참가자 계정으로 로그인하면
     # 복제된 저장소에서 패키지 접근이 거부되어 오히려 실패한다.
-    image: ghcr.io/hy2219/medical-sdlc-db:latest
+    image: ghcr.io/hy2219/medical-sdlc-db@sha256:62c601ebdbdba9e30d50f30f92eab9b70242f9a16e4808e7cdba8f496dbbb010
     env:
       POSTGRES_DB: medical
       POSTGRES_USER: medical
       POSTGRES_PASSWORD: medical
-      LLM_DB_PASSWORD: ${{ secrets.LLM_DB_PASSWORD }}
+      LLM_DB_PASSWORD: ${{ secrets.LLM_DB_PASSWORD || 'llm-readonly-local' }}
     ports:
       - 5432:5432
     options: >-
@@ -49,7 +56,7 @@ mcp-scripts:
         -h 127.0.0.1 -U llm_reader -d medical \
         --command "$INPUT_SQL"
     env:
-      PGPASSWORD: ${{ secrets.LLM_DB_PASSWORD }}
+      PGPASSWORD: ${{ secrets.LLM_DB_PASSWORD || 'llm-readonly-local' }}
 ---
 
 ## Masked patient dataset

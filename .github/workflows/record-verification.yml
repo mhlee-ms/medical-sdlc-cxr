@@ -1,0 +1,69 @@
+name: Record verification
+
+# 검증 에이전트는 판정(checks)을 PR 브랜치에 직접 push 하도록 되어 있지만, 자격 증명이 없는
+# 샌드박스에서 돌아 push 가 실패할 수 있다. 그때를 대비해 검증이 끝나면 봇이 남긴 리뷰
+# 본문의 체크리스트를 읽어 analysis/<n>/analysis.json 의 checks 에 기록한다.
+# 이미 기록돼 있으면 아무것도 하지 않는다.
+on:
+  workflow_run:
+    workflows: ["Independent verification"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: 판정을 기록할 PR 번호
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find the analysis pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REQUESTED: ${{ inputs.pull_request }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            number="$REQUESTED"
+          else
+            number=$(gh pr list --repo "$REPO" --state open --json number,title \
+              --jq '[.[] | select(.title | startswith("Analysis: "))] | sort_by(.number) | last | .number // empty')
+          fi
+          [ -n "$number" ] || { echo "no open analysis pull request"; exit 0; }
+          head=$(gh pr view "$number" --repo "$REPO" --json headRefName --jq .headRefName)
+          file=$(gh pr view "$number" --repo "$REPO" --json files \
+            --jq '[.files[].path | select(test("^analysis/[^/]+/analysis\\.json$"))][0] // empty')
+          [ -n "$file" ] || { echo "PR #$number changes no analysis/*/analysis.json"; exit 0; }
+          gh api "repos/$REPO/pulls/$number/reviews" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | contains("출처")))] | last | .body // ""' \
+            > "$RUNNER_TEMP/review.md"
+          [ -s "$RUNNER_TEMP/review.md" ] || { echo "no verification review on PR #$number yet"; exit 0; }
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - if: steps.pr.outputs.head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.head }}
+
+      - if: steps.pr.outputs.head
+        name: Record checks from the review
+        env:
+          FILE: ${{ steps.pr.outputs.file }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          python3 tools/record_verification.py --check
+          python3 tools/record_verification.py "$FILE" "$RUNNER_TEMP/review.md"
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Record verification checks from review (#$NUMBER)"
+          git push

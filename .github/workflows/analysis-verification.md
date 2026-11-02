@@ -56,9 +56,12 @@ is to catch errors before a physician relies on them.
 2. Read the changed `analysis.json` and `README.md`, the approved plan `analysis/<issue>/plan.md`, the
    originating issue, and the paper under `recommended/`.
 3. Verify **sources**. For every citation, claim about the paper, DOI, author
-   list, journal, and publication date: fetch the source and confirm it. Flag
+   list, journal, and publication date: fetch the source and confirm it. Start
+   with the DOI metadata at `https://api.crossref.org/works/<doi>` (authors,
+   journal, dates) and the publisher page the DOI resolves to (abstract). Flag
    anything you cannot resolve, anything the paper does not actually say, and
-   any number attributed to the paper that is not in it.
+   any number attributed to the paper that is not in it. When a page is
+   unreachable from this environment, say so in the gate rather than guessing.
 4. Verify **data analysis**. Independently re-run every query behind every
    reported number using `query-medical-db`. Do not copy the previous agent's
    SQL blindly — write your own and compare results. Check denominators,
@@ -107,7 +110,14 @@ is to catch errors before a physician relies on them.
 
    The review body must be a checklist over the three gates — sources, data
    analysis, previous agent — each marked pass or fail with the evidence you
-   used.
+   used. Write the three gate lines in exactly this form, because a follow-up
+   workflow copies them into `checks` if your push in step 6 did not land:
+
+   ```text
+   - [x] 출처 실재 — 통과. <evidence>
+   - [ ] 데이터 분석 — 실패. <what did not reproduce>
+   - [x] 이전 에이전트 — 통과. <evidence>
+   ```
 
 ## Constraints
 

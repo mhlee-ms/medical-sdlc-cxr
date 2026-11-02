@@ -53,7 +53,7 @@ jobs:
       postgres:
         # 공개 이미지라 익명으로 받는다. 마스킹 키는 컨테이너가 뜰 때마다 새로 생기므로
         # 분석과 사이트 빌드는 반드시 같은 job 안에서 한다.
-        image: ghcr.io/hy2219/medical-sdlc-db:latest
+        image: ghcr.io/hy2219/medical-sdlc-db@sha256:62c601ebdbdba9e30d50f30f92eab9b70242f9a16e4808e7cdba8f496dbbb010
         env:
           POSTGRES_DB: medical
           POSTGRES_USER: medical
@@ -77,12 +77,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: .github/skills/cxr-analysis/requirements.txt
+          cache-dependency-path: .github/skills/cxr-analysis/requirements.lock
 
-      - name: Install packages (CPU PyTorch)
+      - name: Install packages (pinned, CPU PyTorch)
         run: |
-          pip install -q --no-deps torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install -q -r .github/skills/cxr-analysis/requirements.txt
+          pip install -q --no-deps -r .github/skills/cxr-analysis/requirements.lock \
+            --extra-index-url https://download.pytorch.org/whl/cpu
           pip check
 
       - name: Restore model weights
