@@ -58,10 +58,15 @@ is to catch errors before a physician relies on them.
 3. Verify **sources**. For every citation, claim about the paper, DOI, author
    list, journal, and publication date: fetch the source and confirm it. Start
    with the DOI metadata at `https://api.crossref.org/works/<doi>` (authors,
-   journal, dates) and the publisher page the DOI resolves to (abstract). Flag
-   anything you cannot resolve, anything the paper does not actually say, and
-   any number attributed to the paper that is not in it. When a page is
-   unreachable from this environment, say so in the gate rather than guessing.
+   journal, dates) and the publisher page the DOI resolves to (abstract). Many
+   publishers refuse automated access (HTTP 403); when that happens, re-fetch the
+   abstract yourself from `https://api.openalex.org/works/doi:<doi>`
+   (`abstract_inverted_index`) or the Crossref `abstract` field, check the claims
+   against it, and name that source in the gate — a blocked publisher page alone is
+   not a failure. Flag anything you cannot resolve, anything the paper does not
+   actually say, and any number attributed to the paper that is not in the
+   abstract or another page you actually read. When no source is reachable, say so
+   in the gate rather than guessing.
 4. Verify **data analysis**. Independently re-run every query behind every
    reported number using `query-medical-db`. Do not copy the previous agent's
    SQL blindly — write your own and compare results. Check denominators,
