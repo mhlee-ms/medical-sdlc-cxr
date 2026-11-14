@@ -1,0 +1,15 @@
+{
+  "id": "automation-bias-sentinel-pneumoperitoneum",
+  "title": "Expertise modulates automation bias and sentinel behavior in human–AI collaborative diagnosis of neonatal pneumoperitoneum",
+  "authors": ["Junseong Lee", "Yeonsu Kim", "Victoria Kim", "Changhyun Park", "Jeong Min Song", "Jimin Kwon", "Yoojin Nam", "Patrick Lenehan", "Dong  Yeong Kim", "Young Ah Cho", "Pyeong Hwa Kim", "Jae-Yeon Hwang"],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03399-3",
+  "abstract": "Medical AI is often validated under an additive assumption that algorithmic sensitivity and clinician oversight will combine to improve care. We tested this assumption in the high-stakes diagnosis of neonatal pneumoperitoneum, a time-critical surgical emergency. In a multi-reader crossover study analyzing 1750 interpretation events, clinicians reviewed radiographs aided by either a high-reliability model or a systematically error-injected model. We found that high AI reliability paradoxically induces automation bias in trainees, who accepted 52.0% of incorrect suggestions, while offering limited gains to experts. Conversely, when challenged by flawed AI, the three participating neonatologists exhibited a “sentinel behavior” phenotype, correctly overriding 91.7% of errors (Wilson 95% CI: 83.0–96.0%) consistent with increased deliberation; given the small specialist cohort, this finding is hypothesis-generating and warrants prospective replication. We operationalize systemic resilience as the capacity to maintain diagnostic integrity under algorithmic failure and demonstrate that clinical validity depends on the human–AI team’s adversarial resilience rather than standalone accuracy. To mitigate the risk of deskilling and never-skilling, we release an open-source educational sandbox designed to inoculate clinicians against automated errors.",
+  "axes": ["AI 보조 판독의 자동화 편향", "임상 오류 평가"],
+  "takeaway": "신뢰도 높은 AI는 수련의에서 오답 제안의 52.0%를 수용하게 하는 자동화 편향을 일으킨 반면, 전문의는 오류의 91.7%를 바로잡았다는 판독자 연구 결과이다.",
+  "relevance": "우리 코호트에서 정상(No Finding)은 145건, 이상 소견은 나머지 127건으로, Grad-CAM 히트맵 데모에서 일부러 틀린 모델 출력을 섞어 판독자의 반응을 볼 수 있는 구성이 가능합니다. 결절 12건, 기흉 12건처럼 놓치기 쉬운 소견이 있어 오류 주입 시나리오의 후보가 됩니다.",
+  "caveat": "이 논문은 신생아 기복증이라는 다른 질환·연령군의 연구이며 판독자 수가 적습니다. 우리 데이터는 판독자 반응을 담고 있지 않아 자동화 편향 자체를 확인해 줄 수 없습니다.",
+  "check": "CXR Lens 데모에서 의도적으로 오류를 넣은 히트맵을 보여주면 경력별 판독자가 오답을 얼마나 수용하는지 측정해 볼 수 있는가?"
+}

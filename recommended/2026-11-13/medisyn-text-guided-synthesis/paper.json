@@ -1,0 +1,15 @@
+{
+  "id": "medisyn-text-guided-synthesis",
+  "title": "A generalist model for diverse text-guided medical image synthesis",
+  "authors": ["Joseph Cho", "Mrudang Mathur", "Cyril Zakka", "Dhamanpreet Kaur", "Matthew Leipzig", "Kelly C. Higa", "Alex Dalal", "Aravind Krishnan", "Eubee Koo", "Karen M. Wai", "Cindy S. Zhao", "Akshay Sanjay Chaudhari"],
+  "venue": "npj Digital Medicine",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41746-026-03381-z",
+  "abstract": "Deep learning requires extensive data to achieve robust performance. However, data availability is often restricted in medicine due to patient privacy concerns. Synthetic data from medical image generative models present a possible solution to these challenges. Unfortunately, many models are often task-specific or trained on private datasets, limiting scalability and reproducibility. To address this, we introduce MediSyn: an open-access, generalist, text-guided latent diffusion model. MediSyn can generate images across 6 medical specialties and 10 imaging modalities, while being trained exclusively on public data. Our study provides several key contributions using MediSyn. First, we demonstrate that a generalist model can generate images of comparable quality to task-specific models across multiple specialties. Second, we show that this generalist approach is more computationally efficient than a suite of task-specific models. Third, we establish that a generalist model can produce realistic, text-aligned images across visually and medically distinct modalities. Fourth, we empirically demonstrate that these synthetic images are visually distinct from real images used in training. Finally, we show that a generalist model can produce images that improve classifier performance in data-limited settings across multiple specialties. Altogether, our findings highlight the potential of generalist image generative models to accelerate medical algorithmic research and development.",
+  "axes": ["합성 데이터 활용", "희소 소견 데이터 부족"],
+  "takeaway": "공개 데이터만으로 학습한 텍스트 기반 확산 모델이 여러 영상 모달리티에서 현실적인 합성 영상을 만들고 데이터가 적은 환경에서 분류 성능을 높였다는 주장이다.",
+  "relevance": "우리 코호트 272건은 전부 합성(is_synthetic)으로 표시되어 있어 합성 영상 기반 평가가 얼마나 믿을 만한지가 직접적인 질문입니다. 또한 결절 12건, 기흉 12건처럼 희소 소견의 표본이 작아, 데이터가 적을 때의 증강 효과 논의와 맞닿습니다.",
+  "caveat": "논문은 합성 영상이 학습 데이터 증강에 도움이 된다고 주장할 뿐, 우리 합성 코호트에서 계산한 AUROC나 민감도가 실제 환자에게 그대로 적용된다는 근거는 아닙니다. 흉부 X선 소견별 효과도 초록만으로는 알 수 없습니다.",
+  "check": "합성 영상으로 증강했을 때 희소 소견(결절, 기흉)의 민감도 향상이 실제 영상 외부 검증에서도 유지되는가?"
+}

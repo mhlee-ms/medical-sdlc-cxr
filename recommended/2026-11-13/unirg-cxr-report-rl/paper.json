@@ -1,0 +1,15 @@
+{
+  "id": "unirg-cxr-report-rl",
+  "title": "Scaling medical imaging report generation with multimodal reinforcement learning",
+  "authors": ["Qianchu Liu", "Sheng Zhang", "Guanghui Qin", "Yu Gu", "Ying Jin", "Sam Preston", "Yanbo Xu", "Sid Kiblawi", "Wen-wai Yim", "Timothy Ossowski", "Tristan Naumann", "Mu Wei"],
+  "venue": "Nature Communications",
+  "year": 2026,
+  "source": "OpenAlex",
+  "url": "https://doi.org/10.1038/s41467-026-78767-4",
+  "abstract": "Abstract In medical imaging report generation, supervised fine-tuning can overfit to superficial patterns and generalize poorly across institutions. We introduce Universal Report Generation (UNIRG), which adopts reinforcement learning to directly optimize clinically meaningful quality criteria. With this framework, we developed UNIRG-CXR, an 8-billion-parameter vision–language model trained on four public datasets (MIMIC-CXR, CheXpert Plus, ReXGradient-160k and IU-Xray) by supervised fine-tuning followed by reinforcement learning (group-relative policy optimization) against a composite lexical, semantic and clinical-error reward. We evaluated held-out test sets and an external proprietary dataset, with RadCliQ as primary metric and expert radiologist validation. Here we show that our method improves report quality and generalization: UNIRG-CXR surpasses prior models on the ReXrank benchmark across four datasets and two generation settings, exceeding the previous best score by over 50% on two test sets, and produces fewer clinically significant errors while maintaining performance on unseen data sources and across demographic subgroups.",
+  "axes": ["기관 간 일반화", "임상 오류 평가"],
+  "takeaway": "강화학습으로 임상적 오류를 직접 최적화한 흉부 X선 보고서 생성 모델이 외부 데이터와 인구통계 하위집단에서도 임상적으로 유의한 오류를 줄였다는 주장이다.",
+  "relevance": "우리 코호트는 272건, 5개 기관(INST01–05)에 걸쳐 있고 PA 184건·AP 88건, 여성 136건, 평균 연령 약 51.5세로 기관·촬영체위·성별 하위집단 비교가 가능한 구조입니다. 또한 소견 라벨이 있어 생성 보고서의 소견 언급을 라벨과 대조하는 간단한 점검은 시도해 볼 수 있습니다.",
+  "caveat": "우리 DB의 영상은 모두 합성(is_synthetic)이고 자유 서술 보고서는 분석 대상에서 제외하므로, 보고서 품질(RadCliQ)이나 영상의학과 전문의 수준의 임상 오류 평가는 확인할 수 없습니다.",
+  "check": "기관·AP/PA별로 모델의 소견 언급이 라벨(예: 흉수 33건, 결절 12건)과 얼마나 일치하는지 하위집단 성능 차이를 논문 방식대로 보고하는가?"
+}
