@@ -1,0 +1,22 @@
+{
+  "id": "vlm-contradiction-uncertainty",
+  "title": "Uncertainty, Not Concealment: A Mechanistic Reappraisal of Sycophancy in Vision-Language Models",
+  "authors": [
+    "Mohamed I. Eldagla",
+    "Zeyad H. ElShafei",
+    "Ahmed M. Anter"
+  ],
+  "venue": "NeurIPS",
+  "year": 2026,
+  "source": "arXiv",
+  "url": "http://arxiv.org/abs/2611.10297v2",
+  "abstract": "Vision-language models (VLMs) in medical retrieval-augmented generation must be able to say when a retrieved report contradicts the X-ray, so understanding whether they can detect such conflicts is important for safe deployment. The sycophancy mask hypothesis holds that these models internally detect conflicts but refuse to report them, concealing a detected contradiction. We introduce a three-part diagnostic that separates concealment from uncertainty: representation probing, activation steering, and two-way forced choice. Across four instruction-tuned VLMs on chest X-rays, we confirm behavioral suppression of contradiction and find that a linear probe separates matched from mismatched inputs, beyond what a simple CLIP model achieves. Steering the learned conflict direction never elicits contradiction, and forcing a binary choice does not recover one; instead, cross-modal attention to the image drops on mismatched pairs. We conclude that these models fail to contradict because the mismatch registers as hedged, gated uncertainty rather than concealed knowledge, calling for re-grounding and uncertainty surfacing. Code is available at https://github.com/mohamed-eldagla/Uncertainty-Not-Concealment/.",
+  "axes": [
+    "보고서-영상 불일치",
+    "AI 안전성"
+  ],
+  "takeaway": "이 논문은 흉부 X선에서 보고서와 영상이 모순될 때 시각-언어 모델이 알면서 숨기는 것이 아니라 불확실성으로 처리해 모순을 지적하지 못한다고 주장한다.",
+  "relevance": "우리 코호트는 모든 건이 영상과 보고서 본문, 소견 라벨을 함께 갖고 있어 일부러 어긋난 조합을 만들어 모델의 반응을 볼 수 있다. 결절 등 희소 소견은 12건 안팎이라 놓치기 쉬운 소견 쪽 시나리오가 가능하다.",
+  "caveat": "영상이 합성이고 환자 코호트나 판독자 연구가 아니므로 임상 현장에서의 오류 발생 빈도나 판독자 행동은 확인할 수 없으며, 분석 대상 모델도 우리가 쓰는 DenseNet과 다르다.",
+  "check": "라벨과 반대되는 소견을 담은 보고서를 짝지었을 때 우리 모델의 Grad-CAM과 점수가 얼마나 달라지는가?"
+}
